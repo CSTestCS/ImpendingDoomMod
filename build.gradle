@@ -74,3 +74,11 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Every build leaves the mod jar in dist/ so it can be dropped straight into a mods folder.
+var copyJarToDist = tasks.register('copyJarToDist', Sync) {
+    from tasks.named('jar')
+    into layout.projectDirectory.dir('dist')
+    preserve { include '.gitkeep' }
+}
+tasks.named('build') { finalizedBy copyJarToDist }

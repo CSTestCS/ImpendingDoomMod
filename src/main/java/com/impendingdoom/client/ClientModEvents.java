@@ -65,6 +65,10 @@ public final class ClientModEvents {
                 living.addLayer(new RefitArmorLayer(living, event.getContext()));
             }
         }
+        // Invading ghasts wear happy ghast harnesses (visual only).
+        if (event.getRenderer(EntityType.GHAST) instanceof LivingEntityRenderer living) {
+            living.addLayer(new GhastHarnessLayer(living, event.getContext()));
+        }
     }
 
     private static boolean rendersArmor(LivingEntityRenderer<?, ?, ?> renderer) {
@@ -94,6 +98,10 @@ public final class ClientModEvents {
                 } else {
                     state.setRenderData(ArmorRenderData.ARMOR, null);
                 }
+            }
+            if (entity instanceof net.minecraft.world.entity.monster.Ghast) {
+                ItemStack body = entity.getItemBySlot(EquipmentSlot.BODY);
+                state.setRenderData(ArmorRenderData.HARNESS, body.isEmpty() ? null : body);
             }
             int flags = ClientDoomState.MARKS.getOrDefault(entity.getId(), 0);
             state.setRenderData(ArmorRenderData.SHAKING, (flags & EntityMarkPayload.SHAKING) != 0 ? Boolean.TRUE : null);

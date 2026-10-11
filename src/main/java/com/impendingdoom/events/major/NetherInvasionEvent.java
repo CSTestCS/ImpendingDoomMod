@@ -152,7 +152,8 @@ public class NetherInvasionEvent extends DoomEvent {
                 Entity g = EventUtil.spawn(level, EntityType.GHAST, pos.above(6));
                 if (g instanceof Ghast ghast) {
                     invader(ghast);
-                    ghast.setItemSlot(EquipmentSlot.BODY, new ItemStack(Items.RED_HARNESS));
+                    // Purely cosmetic: rendered by GhastHarnessLayer, never dropped.
+                    GearUtil.equip(ghast, EquipmentSlot.BODY, new ItemStack(Items.RED_HARNESS), 0.0F);
                     AbstractPiglin rider = piglin(level, pos, r, false);
                     if (rider != null) rider.startRiding(ghast, true);
                 }

@@ -1,0 +1,68 @@
+name: Build
+
+# Builds the mod on every push and commits the jar to dist/ so the latest
+# build can always be downloaded from the repository and dropped into a
+# mods folder. The jar is also attached to each run as a workflow artifact.
+on:
+  push:
+    paths-ignore:
+      - 'dist/**'
+      - '**.md'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Use the newest NeoForge build for the configured Minecraft version,
+      # falling back to neo_version from gradle.properties.
+      - name: Resolve NeoForge version
+        id: neo
+        run: |
+          MC=$(grep '^minecraft_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          LATEST=$(curl -fsSL https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml \
+            | grep -o "<version>${MC}\.[^<]*</version>" | sed 's/<[^>]*>//g' | tail -1 || true)
+          if [ -z "$LATEST" ]; then
+            LATEST=$(grep '^neo_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          fi
+          echo "NeoForge $LATEST for Minecraft $MC"
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: ./gradlew build -Pneo_version=${{ steps.neo.outputs.version }} --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: impendingdoom
+          path: dist/*.jar
+
+      - name: Commit jar to dist/
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          if git diff --cached --quiet; then
+            echo "Jar unchanged"
+            exit 0
+          fi
+          git commit -m "Build mod jar [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
