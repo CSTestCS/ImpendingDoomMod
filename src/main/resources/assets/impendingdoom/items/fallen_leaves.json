@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "impendingdoom:block/fallen_leaves_height2",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -1478656
+      }
+    ]
+  }
+}

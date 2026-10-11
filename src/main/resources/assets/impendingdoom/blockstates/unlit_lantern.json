@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hanging=false": {
+      "model": "impendingdoom:block/unlit_lantern"
+    },
+    "hanging=true": {
+      "model": "impendingdoom:block/unlit_lantern_hanging"
+    }
+  }
+}

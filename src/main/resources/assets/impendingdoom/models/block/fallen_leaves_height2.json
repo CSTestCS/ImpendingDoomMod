@@ -1,0 +1,73 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "particle": "minecraft:block/oak_leaves",
+    "leaves": "minecraft:block/oak_leaves"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        2,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#leaves",
+          "tintindex": 0,
+          "cullface": "down"
+        },
+        "up": {
+          "texture": "#leaves",
+          "tintindex": 0
+        },
+        "north": {
+          "texture": "#leaves",
+          "tintindex": 0,
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#leaves",
+          "tintindex": 0,
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#leaves",
+          "tintindex": 0,
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#leaves",
+          "tintindex": 0,
+          "uv": [
+            0,
+            14,
+            16,
+            16
+          ]
+        }
+      }
+    }
+  ]
+}

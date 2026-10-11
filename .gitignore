@@ -1,0 +1,23 @@
+# gradle
+.gradle/
+build/
+out/
+classes/
+
+# idea / eclipse / vscode
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+bin/
+.vscode/
+
+# run directories
+run/
+runs/
+run-data/
+
+repo/
