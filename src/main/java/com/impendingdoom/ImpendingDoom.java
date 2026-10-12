@@ -54,9 +54,9 @@ public final class ImpendingDoom {
 
     /** Wool can be worn on the head (Blood Moon lets players sleep with wool over their eyes). */
     private static void modifyComponents(ModifyDefaultComponentsEvent event) {
-        event.modifyMatching(item -> {
+        event.modifyMatching((item, components) -> {
             Identifier key = BuiltInRegistries.ITEM.getKey(item);
             return key.getNamespace().equals("minecraft") && key.getPath().endsWith("_wool");
-        }, builder -> builder.set(DataComponents.EQUIPPABLE, Equippable.builder(EquipmentSlot.HEAD).build()));
+        }, (builder, lookup, item) -> builder.set(DataComponents.EQUIPPABLE, Equippable.builder(EquipmentSlot.HEAD).build()));
     }
 }

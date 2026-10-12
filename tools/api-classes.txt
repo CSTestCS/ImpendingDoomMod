@@ -1,6 +1,3 @@
-net.neoforged.neoforge.event.level.block.BreakBlockEvent
-net.minecraft.world.level.block.ColorCollection
-net.neoforged.neoforge.event.ModifyDefaultComponentsEvent$ItemWithComponentsPredicate
-net.neoforged.neoforge.event.ModifyDefaultComponentsEvent$Initializer
-net.neoforged.neoforge.client.event.RegisterColorHandlersEvent$BlockTintSources
-net.minecraft.world.item.component.SwingAnimation
+net.minecraft.client.color.block.BlockTintSource
+net.minecraft.client.color.block.BlockTintSources
+net.minecraft.client.renderer.block.BlockAndTintGetter

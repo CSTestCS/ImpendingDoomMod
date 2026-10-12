@@ -1,4 +1,2 @@
-net.minecraft.client.renderer.LevelRenderer|section|dirty|all
-net.minecraft.commands.Commands|perform
-net.minecraft.commands.CommandSourceStack|suppress
-net.minecraft.client.renderer.chunk.SectionRenderDispatcher|dirty|all|rebuild
+net.minecraft.client.renderer.LevelRenderer|set|mark|reload|chunk
+net.minecraft.client.renderer.BiomeColors|static
