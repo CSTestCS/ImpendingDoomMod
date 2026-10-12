@@ -30,10 +30,14 @@ Both numbers can be changed with gamerules:
 | `/impendingdoom list` | every event and its id |
 | `/impendingdoom trigger [event]` | start the foretold event (or the one named) right now (op) |
 | `/impendingdoom next <event>` | choose the next event; players get new Omens (op). `foretell` is an alias |
+| `/impendingdoom disable <event>` / `enable <event>` | stop an event from ever being chosen, or allow it again. Disabling a running event ends it (op) |
+| `/impendingdoom disabled` | list disabled events |
 | `/impendingdoom end minor\|major` | end the running event (op) |
 | `/impendingdoom days <n>` / `minors <n>` | shortcuts for the two gamerules (op) |
 
-You can tune the rest in `config/impendingdoom-common.toml`: the valid mutations list, horde mobs, Kaiju mobs, the hunter blacklist, horde size, Kaiju scale, how fast floods rise, and whether events may destroy blocks. The `mobGriefing` gamerule is also respected.
+The first event of a new world can be picked with the **First Doom Event** button on the Create World screen (default: random), or with `firstEvent` in the config for servers.
+
+You can tune the rest in `config/impendingdoom-startup.toml`: the valid mutations list, horde mobs, small meteor frequency and burst size, Kaiju mobs, the hunter blacklist, horde size, Kaiju scale, how fast floods rise, and whether events may destroy blocks. The `mobGriefing` gamerule is also respected.
 
 ## Minor events
 
