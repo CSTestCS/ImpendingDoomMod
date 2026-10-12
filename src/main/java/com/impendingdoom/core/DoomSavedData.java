@@ -26,6 +26,10 @@ public final class DoomSavedData extends SavedData {
     /** The active season. Seasons persist through other major events until the next season begins. */
     public String currentSeason = "";
     public String nextEvent = "";
+    /** Set when the next event was chosen by command or world creation: it is started regardless of slot type. */
+    public boolean nextForced;
+    /** Events turned off with /impendingdoom disable. */
+    public final java.util.Set<String> disabled = new java.util.TreeSet<>();
     public String lastMinor = "";
     public String lastMajor = "";
 
@@ -58,6 +62,10 @@ public final class DoomSavedData extends SavedData {
         d.minorData = tag.getCompoundOrEmpty("minorData").copy();
         d.majorData = tag.getCompoundOrEmpty("majorData").copy();
         d.hunters = tag.getCompoundOrEmpty("hunters").copy();
+        d.nextForced = tag.getBooleanOr("nextForced", false);
+        net.minecraft.nbt.ListTag off = tag.getListOrEmpty("disabled");
+        for (int i = 0; i < off.size(); i++) d.disabled.add(off.getStringOr(i, ""));
+        d.disabled.remove("");
         d.currentSeason = tag.getStringOr("currentSeason", "");
         d.seasonData = tag.getCompoundOrEmpty("seasonData").copy();
         // Worlds from before seasons had their own layer stored the season as the major event.
@@ -85,12 +93,22 @@ public final class DoomSavedData extends SavedData {
         tag.put("minorData", minorData.copy());
         tag.put("majorData", majorData.copy());
         tag.put("hunters", hunters.copy());
+        tag.putBoolean("nextForced", nextForced);
+        net.minecraft.nbt.ListTag off = new net.minecraft.nbt.ListTag();
+        for (String id : disabled) off.add(net.minecraft.nbt.StringTag.valueOf(id));
+        tag.put("disabled", off);
         tag.putString("currentSeason", currentSeason);
         tag.put("seasonData", seasonData.copy());
         return tag;
     }
 
+    /** The next season in order, skipping disabled seasons (empty if every season is disabled). */
     public String nextSeason() {
-        return EventRegistry.SEASONS.get(Math.floorMod(seasonIndex, EventRegistry.SEASONS.size()));
+        int n = EventRegistry.SEASONS.size();
+        for (int i = 0; i < n; i++) {
+            String season = EventRegistry.SEASONS.get(Math.floorMod(seasonIndex + i, n));
+            if (!disabled.contains(season)) return season;
+        }
+        return "";
     }
 }

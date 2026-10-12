@@ -62,6 +62,12 @@ public class WinterEvent extends DoomEvent {
             data.putBoolean("blizzard", blizzard);
         }
         data.putInt("weatherTimer", timer);
+        // Electrical Storms and Tornadoes still happen in Winter: they come with a blizzard.
+        if (EventScheduler.isActive(com.impendingdoom.events.minor.ElectricalStormEvent.ID)
+                || EventScheduler.isActive(com.impendingdoom.events.minor.TornadoEvent.ID)) {
+            blizzard = true;
+        }
+        data.putBoolean("effectiveBlizzard", blizzard);
         // Only correct the weather when its actual state differs (the rain/thunder *levels* fade in slowly).
         var weather = level.getWeatherData();
         if (!weather.isRaining() || weather.isThundering() != blizzard) {
@@ -160,7 +166,7 @@ public class WinterEvent extends DoomEvent {
 
     /** True while a blizzard is blowing (synced to clients for fog). */
     public static boolean blizzard() {
-        return EventScheduler.isActive(ID) && EventScheduler.eventData(ID).getBooleanOr("blizzard", false);
+        return EventScheduler.isActive(ID) && EventScheduler.eventData(ID).getBooleanOr("effectiveBlizzard", false);
     }
 
     @Override

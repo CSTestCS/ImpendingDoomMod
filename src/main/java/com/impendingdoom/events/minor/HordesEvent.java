@@ -61,7 +61,7 @@ public class HordesEvent extends DoomEvent {
             for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.getTarget() == null)) {
                 UUID prey = EventUtil.uuid(m.getPersistentData(), PREY);
                 Player p = prey == null ? null : level.getPlayerByUUID(prey);
-                if (p != null && !p.isCreative() && m.distanceToSqr(p) < 24 * 24) m.setTarget(p);
+                if (p != null && !p.isSpectator() && m.distanceToSqr(p) < 24 * 24) m.setTarget(p);
             }
         }
     }

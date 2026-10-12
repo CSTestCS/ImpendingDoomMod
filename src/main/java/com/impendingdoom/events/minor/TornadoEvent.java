@@ -29,15 +29,16 @@ public class TornadoEvent extends DoomEvent {
 
     @Override
     public void onStart(ServerLevel level, CompoundTag data) {
-        data.putInt("remaining", 12000 + level.getRandom().nextInt(6000));
+        // A tornado lasts a few minutes.
+        data.putInt("remaining", 3600 + level.getRandom().nextInt(2400));
         spawn(level, data);
-        EventUtil.setWeather(level, "rain", 18000);
+        EventUtil.setWeather(level, "rain", 6000);
     }
 
     private void spawn(ServerLevel level, CompoundTag data) {
         ServerPlayer target = EventUtil.randomTarget(level);
         if (target == null) return;
-        BlockPos pos = EventUtil.surfacePos(level, target.blockPosition(), 64, 80, level.getRandom());
+        BlockPos pos = EventUtil.surfacePos(level, target.blockPosition(), 48, 64, level.getRandom());
         if (pos == null) return;
         TornadoEntity tornado = ModEntities.TORNADO.get().create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
         if (tornado == null) return;

@@ -23,6 +23,8 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * /impendingdoom list                     - list all events
  * /impendingdoom trigger [event]          - start the next (or given) event right now
  * /impendingdoom next &lt;event&gt;       - choose the next event (re-issues omens); "foretell" is an alias
+ * /impendingdoom disable|enable &lt;event&gt; - stop an event from ever being chosen (or allow it again)
+ * /impendingdoom disabled                 - list disabled events
  * /impendingdoom end minor|major          - end the running event
  * /impendingdoom days &lt;n&gt;           - same as /gamerule impendingdoom:days_between_events
  * /impendingdoom minors &lt;n&gt;         - same as /gamerule impendingdoom:minor_events_before_major
@@ -49,6 +51,15 @@ public final class DoomCommands {
                         .then(Commands.argument("event", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
                                 .executes(DoomCommands::foretell)))
+                .then(Commands.literal("disable").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("event", StringArgumentType.word())
+                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
+                                .executes(ctx -> setEnabled(ctx, false))))
+                .then(Commands.literal("enable").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("event", StringArgumentType.word())
+                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
+                                .executes(ctx -> setEnabled(ctx, true))))
+                .then(Commands.literal("disabled").executes(DoomCommands::listDisabled))
                 .then(Commands.literal("foretell").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("event", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
@@ -120,8 +131,42 @@ public final class DoomCommands {
         DoomEvent e = EventRegistry.get(StringArgumentType.getString(ctx, "event"));
         if (e == null) throw UNKNOWN.create();
         EventScheduler.setNext(ctx.getSource().getServer().overworld(), d, e);
+        // The chosen event starts next regardless of whether a minor or major event was due.
+        d.nextForced = true;
+        d.disabled.remove(e.id());
+        d.setDirty();
         ctx.getSource().sendSuccess(() -> Component.literal("Next event: ").append(e.displayName()), true);
         return 1;
+    }
+
+    /** Disabled events are never chosen. Disabling a running event ends it; disabling the foretold one re-rolls it. */
+    private static int setEnabled(CommandContext<CommandSourceStack> ctx, boolean enabled) throws CommandSyntaxException {
+        DoomSavedData d = data();
+        DoomEvent e = EventRegistry.get(StringArgumentType.getString(ctx, "event"));
+        if (e == null) throw UNKNOWN.create();
+        ServerLevel level = ctx.getSource().getServer().overworld();
+        if (enabled) {
+            d.disabled.remove(e.id());
+        } else {
+            d.disabled.add(e.id());
+            if (e.id().equals(d.currentMinor)) EventScheduler.endMinor(level, d);
+            if (e.id().equals(d.currentSeason)) EventScheduler.endSeason(level, d);
+            if (e.id().equals(d.currentMajor)) EventScheduler.endMajor(level, d);
+            if (e.id().equals(d.nextEvent)) EventScheduler.chooseNext(level, d);
+            EventScheduler.syncAll(level, d);
+        }
+        d.setDirty();
+        ctx.getSource().sendSuccess(() -> e.displayName().append(Component.literal(enabled ? " enabled" : " disabled")), true);
+        return 1;
+    }
+
+    private static int listDisabled(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        DoomSavedData d = data();
+        if (d.disabled.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("No events are disabled"), false);
+        }
+        for (String id : d.disabled) ctx.getSource().sendSuccess(() -> name(id), false);
+        return d.disabled.size();
     }
 
     private static int end(CommandContext<CommandSourceStack> ctx, boolean major) throws CommandSyntaxException {

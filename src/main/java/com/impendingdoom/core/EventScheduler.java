@@ -100,7 +100,13 @@ public final class EventScheduler {
         if (!d.initialized) {
             d.initialized = true;
             d.lastEventDay = day;
-            chooseNext(level, d);
+            DoomEvent first = FirstEventChoice.take();
+            if (first != null && !d.disabled.contains(first.id())) {
+                setNext(level, d, first);
+                d.nextForced = true;
+            } else {
+                chooseNext(level, d);
+            }
             d.setDirty();
         }
         // Time was set backwards with /time: restart the countdown rather than waiting for the old day.
@@ -160,8 +166,17 @@ public final class EventScheduler {
     public static void triggerNext(ServerLevel level, DoomSavedData d, long day, DoomEvent forced) {
         boolean wantMajor = d.minorsSinceMajor >= ModGameRules.minorEventsBeforeMajor(level);
         DoomEvent next = forced != null ? forced : EventRegistry.get(d.nextEvent);
-        if (forced == null && (next == null || next.isMajor() != wantMajor || (next.isSeason() && !next.id().equals(d.nextSeason())))) {
+        boolean chosen = forced != null || (d.nextForced && next != null);
+        if (!chosen && (next == null || d.disabled.contains(next.id()) || next.isMajor() != wantMajor
+                || (next.isSeason() && !next.id().equals(d.nextSeason())))) {
             next = pick(level, d, wantMajor);
+        }
+        d.nextForced = false;
+        if (next == null) {
+            // Every event is disabled: just restart the countdown.
+            d.lastEventDay = day;
+            d.setDirty();
+            return;
         }
 
         if (!d.currentMinor.isEmpty()) endMinor(level, d);
@@ -175,6 +190,7 @@ public final class EventScheduler {
             d.majorStartDay = day;
             if (next.isSeason()) {
                 if (!d.currentSeason.isEmpty()) endSeason(level, d);
+                d.majorData = new CompoundTag();
                 d.currentSeason = next.id();
                 d.seasonData = new CompoundTag();
                 d.seasonIndex = (EventRegistry.SEASONS.indexOf(next.id()) + 1) % EventRegistry.SEASONS.size();
@@ -263,12 +279,10 @@ public final class EventScheduler {
 
     /** Picks a random event of the requested kind, honouring season order and avoiding immediate repeats. */
     public static DoomEvent pick(ServerLevel level, DoomSavedData d, boolean major) {
-        List<DoomEvent> candidates = new ArrayList<>();
-        for (DoomEvent e : EventRegistry.all()) {
-            if (e.isMajor() != major) continue;
-            if (e.isSeason() && !e.id().equals(d.nextSeason())) continue;
-            candidates.add(e);
-        }
+        List<DoomEvent> candidates = candidates(d, major);
+        // If every event of the wanted kind is disabled, fall back to the other kind.
+        if (candidates.isEmpty()) candidates = candidates(d, !major);
+        if (candidates.isEmpty()) return null;
         if (candidates.size() > 1) {
             String avoid = major ? d.currentMajor : (d.currentMinor.isEmpty() ? d.lastMinor : d.currentMinor);
             candidates.removeIf(e -> e.id().equals(avoid));
@@ -276,12 +290,30 @@ public final class EventScheduler {
         return candidates.get(level.getRandom().nextInt(candidates.size()));
     }
 
+    private static List<DoomEvent> candidates(DoomSavedData d, boolean major) {
+        List<DoomEvent> candidates = new ArrayList<>();
+        for (DoomEvent e : EventRegistry.all()) {
+            if (e.isMajor() != major || d.disabled.contains(e.id())) continue;
+            if (e.isSeason() && !e.id().equals(d.nextSeason())) continue;
+            candidates.add(e);
+        }
+        return candidates;
+    }
+
     /** Chooses the following event and hands out omens. */
     public static void chooseNext(ServerLevel level, DoomSavedData d) {
         boolean major = d.minorsSinceMajor >= ModGameRules.minorEventsBeforeMajor(level);
-        setNext(level, d, pick(level, d, major));
+        DoomEvent next = pick(level, d, major);
+        d.nextForced = false;
+        if (next == null) {
+            d.nextEvent = "";
+            d.setDirty();
+            return;
+        }
+        setNext(level, d, next);
     }
 
+    /** Sets the next event. Callers choosing it on purpose (commands) also set {@code d.nextForced}. */
     public static void setNext(ServerLevel level, DoomSavedData d, DoomEvent next) {
         d.nextEvent = next.id();
         d.omenSerial++;

@@ -1,5 +1,6 @@
 package com.impendingdoom.events.major;
 
+import com.impendingdoom.config.DoomConfig;
 import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.entity.MeteorEntity;
 import com.impendingdoom.registry.ModEntities;
@@ -26,8 +27,13 @@ public class MeteorShowerEvent extends DoomEvent {
         RandomSource r = level.getRandom();
         for (ServerPlayer player : level.players()) {
             if (r.nextInt(900) == 0) launch(level, player, r, false);
-            // Small meteors fall constantly
-            if (r.nextInt(70) == 0) launch(level, player, r, true);
+            // Small meteors fall constantly, in bursts (see config: smallMeteorInterval / Min / Max).
+            if (r.nextInt(Math.max(1, DoomConfig.SMALL_METEOR_INTERVAL.get())) == 0) {
+                int min = DoomConfig.SMALL_METEOR_MIN.get();
+                int max = Math.max(min, DoomConfig.SMALL_METEOR_MAX.get());
+                int count = min + r.nextInt(max - min + 1);
+                for (int i = 0; i < count; i++) launch(level, player, r, true);
+            }
         }
     }
 

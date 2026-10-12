@@ -130,15 +130,11 @@ public class MeteorEntity extends Entity {
         discard();
     }
 
+    /** A small explosion that hurts and knocks back nearby entities but never touches terrain. */
     private void smallImpact(ServerLevel level, Vec3 at) {
-        for (net.minecraft.world.entity.LivingEntity e : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
-                new net.minecraft.world.phys.AABB(at, at).inflate(2.5))) {
-            e.hurtServer(level, level.damageSources().explosion(this, null), 5.0F);
-            e.igniteForSeconds(3.0F);
-        }
-        level.sendParticles(ParticleTypes.EXPLOSION, at.x, at.y + 0.3, at.z, 1, 0, 0, 0, 0);
-        level.sendParticles(ParticleTypes.LAVA, at.x, at.y + 0.3, at.z, 6, 0.3, 0.2, 0.3, 0.0);
-        level.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.WEATHER, 1.2F, 1.6F);
+        level.explode(this, at.x, at.y + 0.2, at.z, 1.8F, false, Level.ExplosionInteraction.NONE);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.WEATHER, 1.5F, 1.4F);
+        level.sendParticles(ParticleTypes.LAVA, at.x, at.y + 0.3, at.z, 8, 0.3, 0.2, 0.3, 0.0);
         BlockPos pos = BlockPos.containing(at);
         if (level.getRandom().nextInt(10) == 0 && level.getBlockState(pos).canBeReplaced() && level.getBlockState(pos).getFluidState().isEmpty()) {
             level.setBlockAndUpdate(pos, Blocks.END_STONE.defaultBlockState());

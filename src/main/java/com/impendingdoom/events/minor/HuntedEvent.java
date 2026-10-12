@@ -245,7 +245,7 @@ public class HuntedEvent extends DoomEvent {
             for (Mob hunter : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.isAlive())) {
                 UUID ownerId = owner(hunter);
                 ServerPlayer owner = ownerId == null ? null : (ServerPlayer) level.getPlayerByUUID(ownerId);
-                if (owner == null || owner.isCreative() || owner.isSpectator()) continue;
+                if (owner == null || owner.isSpectator()) continue;
                 // Every few minutes the pack is told where its prey is.
                 if (time % 2400 == 0) hunter.getPersistentData().putLong(COORDS, owner.blockPosition().asLong());
                 if (hunter.getPersistentData().getIntOr(SLOT, 0) < 0) continue; // walking heart ally

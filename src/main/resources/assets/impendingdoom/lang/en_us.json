@@ -115,5 +115,7 @@
   "event.impendingdoom.solar_eclipse": "Solar Eclipse",
   "event.impendingdoom.solar_eclipse.desc": "The sun goes dark. Monsters walk by day, wardens and creakings among them.",
   "event.impendingdoom.nether_invasion": "Nether Invasion",
-  "event.impendingdoom.nether_invasion.desc": "The portals are open. The piglins are coming."
+  "event.impendingdoom.nether_invasion.desc": "The portals are open. The piglins are coming.",
+  "gui.impendingdoom.first_event": "First Doom Event: %s",
+  "gui.impendingdoom.first_event.random": "Random"
 }

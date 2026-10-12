@@ -24,6 +24,10 @@ public final class DoomConfig {
     public static final ModConfigSpec.DoubleValue FLOOD_RISE_PER_DAY;
     public static final ModConfigSpec.DoubleValue LAVA_RISE_PER_DAY;
     public static final ModConfigSpec.BooleanValue EVENTS_DESTROY_BLOCKS;
+    public static final ModConfigSpec.ConfigValue<String> FIRST_EVENT;
+    public static final ModConfigSpec.IntValue SMALL_METEOR_INTERVAL;
+    public static final ModConfigSpec.IntValue SMALL_METEOR_MIN;
+    public static final ModConfigSpec.IntValue SMALL_METEOR_MAX;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -60,6 +64,10 @@ public final class DoomConfig {
         KAIJU_SCALE = b.comment("Kaiju size multiplier").defineInRange("kaijuScale", 20.0, 1.0, 32.0);
         FLOOD_RISE_PER_DAY = b.comment("Blocks the Flooding water rises per Minecraft day (rain doubles it)")
                 .defineInRange("floodRisePerDay", 2.0, 0.1, 64.0);
+        SMALL_METEOR_INTERVAL = b.comment("Average ticks between bursts of small meteors around each player during a Meteor Shower (20 ticks = 1 second)")
+                .defineInRange("smallMeteorInterval", 40, 1, 72000);
+        SMALL_METEOR_MIN = b.comment("Minimum number of small meteors in each burst").defineInRange("smallMeteorMin", 1, 0, 100);
+        SMALL_METEOR_MAX = b.comment("Maximum number of small meteors in each burst").defineInRange("smallMeteorMax", 4, 0, 100);
         LAVA_RISE_PER_DAY = b.comment("Blocks the Volcanic Flooding lava rises per Minecraft day")
                 .defineInRange("lavaRisePerDay", 3.0, 0.1, 64.0);
         b.pop();
@@ -67,6 +75,8 @@ public final class DoomConfig {
         b.push("general");
         EVENTS_DESTROY_BLOCKS = b.comment("Allow events (tornadoes, meteors, kaiju, earthquakes, ...) to destroy blocks. The mobGriefing gamerule is also respected.")
                 .define("eventsDestroyBlocks", true);
+        FIRST_EVENT = b.comment("First event of a new world: \"random\" or an event id (see /impendingdoom list). The Create World screen overrides this.")
+                .define("firstEvent", "random");
         b.pop();
 
         SPEC = b.build();

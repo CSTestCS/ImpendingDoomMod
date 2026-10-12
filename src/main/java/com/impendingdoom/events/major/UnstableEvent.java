@@ -97,7 +97,7 @@ public class UnstableEvent extends DoomEvent {
             }
             // Everything standing on the ground is thrown upward.
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(48),
-                    e -> e.onGround() && !(e instanceof Player pl && (pl.isCreative() || pl.isSpectator())))) {
+                    e -> e.onGround() && !(e instanceof Player pl && pl.isSpectator()))) {
                 if (r.nextInt(3) != 0) continue;
                 double up = (0.35 + r.nextDouble() * 0.35) * intensity;
                 e.setDeltaMovement(e.getDeltaMovement().add((r.nextDouble() - 0.5) * 0.2 * intensity, up, (r.nextDouble() - 0.5) * 0.2 * intensity));

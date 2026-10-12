@@ -82,7 +82,7 @@ public class SwarmsEvent extends DoomEvent {
             }
             UUID preyId = EventUtil.uuid(mob.getPersistentData(), PREY);
             Player prey = preyId == null ? null : level.getPlayerByUUID(preyId);
-            if (prey == null || prey.isCreative() || prey.isSpectator()) continue;
+            if (prey == null || prey.isSpectator()) continue;
             // All members of one swarm share the same 20 second rhythm: circle for 12s, then attack for 8s.
             long phase = (time + Math.abs(mob.getPersistentData().getStringOr(SWARM, "").hashCode())) % 400;
             boolean circling = phase < 240;

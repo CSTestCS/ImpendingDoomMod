@@ -59,7 +59,7 @@ public final class EventUtil {
     public static List<ServerPlayer> targets(ServerLevel level) {
         List<ServerPlayer> list = new ArrayList<>();
         for (ServerPlayer p : level.players()) {
-            if (!p.isSpectator() && !p.isCreative() && p.isAlive()) list.add(p);
+            if (!p.isSpectator() && p.isAlive()) list.add(p);
         }
         return list;
     }

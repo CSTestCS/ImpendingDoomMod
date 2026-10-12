@@ -49,13 +49,16 @@ public class ElectricalStormEvent extends DoomEvent {
 
     @Override
     public void onStart(ServerLevel level, CompoundTag data) {
+        data.putInt("remaining", 36000);
         EventUtil.setWeather(level, "thunder", 36000);
     }
 
     @Override
     public void onTick(ServerLevel level, CompoundTag data) {
-        int age = data.getIntOr("age", 0) + 1;
-        data.putInt("age", age);
+        int remaining = data.getIntOr("remaining", 36000) - 1;
+        data.putInt("remaining", remaining);
+        // The storm keeps the thunder going for its whole duration (during Winter it is a thundering blizzard).
+        if (!level.getWeatherData().isThundering() && remaining > 0) EventUtil.setWeather(level, "thunder", remaining);
         if (!level.isThundering()) return;
         for (ServerPlayer player : level.players()) {
             if (level.getRandom().nextInt(90) != 0) continue;
@@ -79,7 +82,7 @@ public class ElectricalStormEvent extends DoomEvent {
 
     @Override
     public boolean isComplete(ServerLevel level, CompoundTag data) {
-        return data.getIntOr("age", 0) > 200 && !level.isThundering();
+        return data.getIntOr("remaining", 36000) <= 0;
     }
 
     public static void charge(Mob mob) {

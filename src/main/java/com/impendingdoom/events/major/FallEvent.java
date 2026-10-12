@@ -96,7 +96,7 @@ public class FallEvent extends DoomEvent {
     /** Called by leaf piles: they work as spawners of decaying creepers, even in the light. */
     public static void leafPileSpawn(ServerLevel level, BlockPos pos, RandomSource r) {
         if (!EventScheduler.isActive(ID)) return;
-        if (level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 32, p -> !((Player) p).isCreative() && !p.isSpectator()) == null) return;
+        if (level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 32, p -> !p.isSpectator()) == null) return;
         int nearby = level.getEntitiesOfClass(Creeper.class, new AABB(pos).inflate(16), c -> c.entityTags().contains(DECAYING)).size();
         if (nearby >= 3 || !level.getBlockState(pos.above()).isAir() || !level.getBlockState(pos.above(2)).isAir()) return;
         Creeper creeper = EntityTypes.CREEPER.create(level, EntitySpawnReason.SPAWNER);
@@ -141,10 +141,12 @@ public class FallEvent extends DoomEvent {
 
     private static void makeTiny(Spider spider) {
         spider.addTag(TINY);
-        EventUtil.addModifier(spider, Attributes.SCALE, "tiny_scale", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        EventUtil.addModifier(spider, Attributes.MAX_HEALTH, "tiny_health", -0.7, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        EventUtil.addModifier(spider, Attributes.MOVEMENT_SPEED, "tiny_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
-        spider.setHealth(spider.getMaxHealth());
+        // A quarter of normal size, normal speed, one heart of health, and they weave cobwebs.
+        EventUtil.addModifier(spider, Attributes.SCALE, "tiny_scale", -0.75, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        EventUtil.addModifier(spider, Attributes.MAX_HEALTH, "tiny_health", -0.875, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        spider.setHealth(2.0F);
+        spider.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAVING,
+                net.minecraft.world.effect.MobEffectInstance.INFINITE_DURATION, 0));
         setupTiny(spider);
     }
 

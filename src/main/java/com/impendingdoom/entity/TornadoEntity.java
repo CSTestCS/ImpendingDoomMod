@@ -171,9 +171,10 @@ public class TornadoEntity extends Entity {
         double nx = getX() + motion.x;
         double nz = getZ() + motion.z;
         BlockPos column = BlockPos.containing(nx, getY(), nz);
-        double ny = getY();
-        if (level.isLoaded(column)) ny = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY();
-        setPos(nx, Mth.lerp(0.2, getY(), ny), nz);
+        if (!level.isLoaded(column)) return;
+        // Always sits on the surface (never in caves), following the terrain exactly.
+        double ny = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY();
+        setPos(nx, ny, nz);
     }
 
     // ---------------------------------------------------------------- physics (server)
@@ -183,8 +184,10 @@ public class TornadoEntity extends Entity {
         long now = level.getGameTime();
         RandomSource r = level.getRandom();
         for (Entity e : level.getEntities(this, box, e -> !(e instanceof TornadoEntity) && !e.isSpectator()
-                && !(e instanceof Player p && (p.isCreative() || p.getAbilities().flying)))) {
+                && !(e instanceof Player p && p.getAbilities().flying))) {
             if (now - e.getPersistentData().getLongOr(FLUNG, -1000L) < 40) continue;
+            // Only things out in the open: nothing underground or under a roof is touched.
+            if (e.getY() < getY() - 3 || !level.canSeeSky(e.blockPosition().above())) continue;
             double h = e.getY() - getY();
             double dx = e.getX() - getX();
             double dz = e.getZ() - getZ();
