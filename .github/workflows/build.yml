@@ -48,6 +48,10 @@ jobs:
       - name: Build
         run: ./gradlew build -Pneo_version=${{ steps.neo.outputs.version }} --stacktrace
 
+      - name: Print API signatures (on failure)
+        if: failure()
+        run: tools/api-dump.sh -Pneo_version=${{ steps.neo.outputs.version }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: impendingdoom

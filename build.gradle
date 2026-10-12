@@ -66,6 +66,14 @@ neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '2000']
+}
+
+// Used by CI to look up API signatures when a build fails.
+tasks.register('printCompileClasspath') {
+    def cp = sourceSets.main.compileClasspath
+    notCompatibleWithConfigurationCache('prints the classpath')
+    doLast { println 'CP=' + cp.asPath }
 }
 
 idea {
