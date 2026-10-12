@@ -16,6 +16,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -236,14 +237,14 @@ public class Herobrine extends PathfinderMob {
         Vec3 back = watched.getViewVector(1.0F).multiply(1, 0, 1).normalize().scale(-1.6);
         teleportVisible(level, watched.position().add(back));
         lookAtWatched();
-        swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);
         level.destroyBlock(watched.blockPosition().below(), false, this);
         mode = Mode.BEHIND;
         modeTimer = 15;
     }
 
     private void summon(ServerLevel level) {
-        EntityType<?>[] types = {EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER, EntityType.CREEPER, EntityType.VEX, EntityType.WITCH, EntityType.CREAKING};
+        EntityType<?>[] types = {EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.SPIDER, EntityTypes.CREEPER, EntityTypes.VEX, EntityTypes.WITCH, EntityTypes.CREAKING};
         int count = 2 + getRandom().nextInt(3);
         for (int i = 0; i < count; i++) {
             BlockPos pos = EventUtil.surfacePos(level, watched.blockPosition(), 4, 10, getRandom());
@@ -259,7 +260,7 @@ public class Herobrine extends PathfinderMob {
         Vec3 dir = watched.getEyePosition().subtract(from).normalize();
         switch (getRandom().nextInt(6)) {
             case 0 -> {
-                LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
+                LightningBolt bolt = EntityTypes.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
                 if (bolt != null) {
                     bolt.setPos(watched.getX(), watched.getY(), watched.getZ());
                     level.addFreshEntity(bolt);

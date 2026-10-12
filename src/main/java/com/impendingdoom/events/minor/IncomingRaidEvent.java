@@ -22,6 +22,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -98,7 +99,7 @@ public class IncomingRaidEvent extends DoomEvent {
         if (raid.getBooleanOr("done", false)) return;
         int id = raid.getIntOr("id", 0);
         BlockPos center = BlockPos.of(raid.getLongOr("center", 0L));
-        ServerBossEvent bar = BARS.computeIfAbsent(id, k -> new ServerBossEvent(Component.translatable("event.minecraft.raid"),
+        ServerBossEvent bar = BARS.computeIfAbsent(id, k -> new ServerBossEvent(java.util.UUID.randomUUID(), Component.translatable("event.minecraft.raid"),
                 BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10));
         List<ServerPlayer> near = level.getPlayers(p -> p.blockPosition().closerThan(center, 96));
         for (ServerPlayer p : level.players()) {
@@ -108,7 +109,7 @@ public class IncomingRaidEvent extends DoomEvent {
         if (near.isEmpty()) return; // the raid waits for the players
 
         String tag = RAIDER_KEY + "_" + id;
-        List<Mob> raiders = level.getEntitiesOfClass(Mob.class, new AABB(center).inflate(160), m -> m.isAlive() && m.getTags().contains(tag));
+        List<Mob> raiders = level.getEntitiesOfClass(Mob.class, new AABB(center).inflate(160), m -> m.isAlive() && m.entityTags().contains(tag));
         int wave = raid.getIntOr("wave", 0);
         int waves = raid.getIntOr("waves", 5);
         int waveSize = Math.max(1, raid.getIntOr("waveSize", 1));
@@ -149,24 +150,24 @@ public class IncomingRaidEvent extends DoomEvent {
         BlockPos origin = EventUtil.surfacePos(level, center, 24, 40, level.getRandom());
         if (origin == null) origin = center;
         int count = 0;
-        count += spawnN(level, EntityType.PILLAGER, PILLAGERS[w] + bonus, origin, center, tag, wave == 0);
-        count += spawnN(level, EntityType.VINDICATOR, VINDICATORS[w] + bonus, origin, center, tag, false);
-        count += spawnN(level, EntityType.EVOKER, EVOKERS[w], origin, center, tag, false);
-        count += spawnN(level, EntityType.WITCH, WITCHES[w], origin, center, tag, false);
+        count += spawnN(level, EntityTypes.PILLAGER, PILLAGERS[w] + bonus, origin, center, tag, wave == 0);
+        count += spawnN(level, EntityTypes.VINDICATOR, VINDICATORS[w] + bonus, origin, center, tag, false);
+        count += spawnN(level, EntityTypes.EVOKER, EVOKERS[w], origin, center, tag, false);
+        count += spawnN(level, EntityTypes.WITCH, WITCHES[w], origin, center, tag, false);
         for (int i = 0; i < RAVAGERS[w]; i++) {
-            Mob ravager = raider(level, EntityType.RAVAGER, origin, center, tag);
+            Mob ravager = raider(level, EntityTypes.RAVAGER, origin, center, tag);
             if (ravager == null) continue;
             count++;
-            EntityType<? extends Mob> riderType = wave >= 5 ? EntityType.EVOKER : (wave >= 3 ? EntityType.VINDICATOR : EntityType.PILLAGER);
+            EntityType<? extends Mob> riderType = wave >= 5 ? EntityTypes.EVOKER : (wave >= 3 ? EntityTypes.VINDICATOR : EntityTypes.PILLAGER);
             Mob rider = raider(level, riderType, origin, center, tag);
             if (rider != null) {
-                rider.startRiding(ravager, true);
+                rider.startRiding(ravager, true, true);
                 count++;
             }
         }
         raid.putInt("waveSize", count);
         for (ServerPlayer p : level.getPlayers(p -> p.blockPosition().closerThan(center, 96))) {
-            p.playNotifySound(SoundEvents.RAID_HORN.value(), SoundSource.NEUTRAL, 64.0F, 1.0F);
+            EventUtil.notifySound(p, SoundEvents.RAID_HORN.value(), SoundSource.NEUTRAL, 64.0F, 1.0F);
         }
     }
 
@@ -210,7 +211,7 @@ public class IncomingRaidEvent extends DoomEvent {
         bar.setProgress(1.0F);
         for (ServerPlayer p : near) {
             p.addEffect(new MobEffectInstance(MobEffects.HERO_OF_THE_VILLAGE, 48000, level.getDifficulty() == Difficulty.HARD ? 2 : 0));
-            p.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.0F, 1.0F);
+            EventUtil.notifySound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.0F, 1.0F);
             p.sendSystemMessage(Component.translatable("message.impendingdoom.raid_victory").withStyle(ChatFormatting.GREEN));
         }
         EventUtil.defer(() -> {
@@ -239,7 +240,7 @@ public class IncomingRaidEvent extends DoomEvent {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !event.loadedFromDisk()) return;
-        if (event.getEntity() instanceof Mob mob && mob.getTags().contains(RAIDER_KEY)) {
+        if (event.getEntity() instanceof Mob mob && mob.entityTags().contains(RAIDER_KEY)) {
             if (!EventScheduler.isActive(ID)) {
                 mob.removeTag(RAIDER_KEY);
                 return;

@@ -18,6 +18,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -75,7 +76,7 @@ public class FallEvent extends DoomEvent {
                 if (origin == null) continue;
                 for (int i = 0; i < count; i++) {
                     BlockPos pos = EventUtil.surfacePos(level, origin, 0, 3, r);
-                    if (EventUtil.spawn(level, EntityType.SPIDER, pos == null ? origin : pos) instanceof Spider spider) {
+                    if (EventUtil.spawn(level, EntityTypes.SPIDER, pos == null ? origin : pos) instanceof Spider spider) {
                         makeTiny(spider);
                         if (swarm) spider.setTarget(player);
                     }
@@ -106,9 +107,9 @@ public class FallEvent extends DoomEvent {
     public static void leafPileSpawn(ServerLevel level, BlockPos pos, RandomSource r) {
         if (!EventScheduler.isActive(ID)) return;
         if (level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 32, p -> !((Player) p).isCreative() && !p.isSpectator()) == null) return;
-        int nearby = level.getEntitiesOfClass(Creeper.class, new AABB(pos).inflate(16), c -> c.getTags().contains(DECAYING)).size();
+        int nearby = level.getEntitiesOfClass(Creeper.class, new AABB(pos).inflate(16), c -> c.entityTags().contains(DECAYING)).size();
         if (nearby >= 3 || !level.getBlockState(pos.above()).isAir() || !level.getBlockState(pos.above(2)).isAir()) return;
-        Creeper creeper = EntityType.CREEPER.create(level, EntitySpawnReason.SPAWNER);
+        Creeper creeper = EntityTypes.CREEPER.create(level, EntitySpawnReason.SPAWNER);
         if (creeper == null) return;
         creeper.setPos(pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5);
         creeper.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.SPAWNER, null);
@@ -147,13 +148,13 @@ public class FallEvent extends DoomEvent {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !event.loadedFromDisk()) return;
-        if (event.getEntity() instanceof Creeper c && c.getTags().contains(DECAYING)) setupDecaying(c);
-        if (event.getEntity() instanceof Spider s && s.getTags().contains(TINY)) setupTiny(s);
+        if (event.getEntity() instanceof Creeper c && c.entityTags().contains(DECAYING)) setupDecaying(c);
+        if (event.getEntity() instanceof Spider s && s.entityTags().contains(TINY)) setupTiny(s);
     }
 
     @SubscribeEvent
     public static void onCreeperTick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof Creeper creeper) || !(creeper.level() instanceof ServerLevel level) || !creeper.getTags().contains(DECAYING)) return;
+        if (!(event.getEntity() instanceof Creeper creeper) || !(creeper.level() instanceof ServerLevel level) || !creeper.entityTags().contains(DECAYING)) return;
         if (creeper.tickCount % 20 == 0) {
             // Always knows where the player is.
             Player target = level.getNearestPlayer(creeper.getX(), creeper.getY(), creeper.getZ(), 128, p -> !((Player) p).isCreative() && !p.isSpectator());
@@ -191,7 +192,7 @@ public class FallEvent extends DoomEvent {
             if (r.nextBoolean()) {
                 BlockPos pos = EventUtil.surfacePos(level, skeleton.blockPosition(), 2, 6, r);
                 if (pos != null) {
-                    Mob extra = EventUtil.spawn(level, EntityType.SKELETON, pos);
+                    Mob extra = EventUtil.spawn(level, EntityTypes.SKELETON, pos);
                     if (extra instanceof AbstractSkeleton s) {
                         GearUtil.equipArmor(s, r, 0, 5, 0.6F);
                         GearUtil.equip(s, EquipmentSlot.MAINHAND, GearUtil.randomWeapon(r), 0.085F);

@@ -89,7 +89,7 @@ public class DistortionEvent extends DoomEvent {
             t.putInt("impendingdoom_warp_damage", damageAtWarp);
         });
         player.setItemSlot(slot, ItemStack.EMPTY);
-        if (!player.getInventory().add(warpedStack)) player.drop(warpedStack, true, false);
+        if (!player.getInventory().add(warpedStack)) EventUtil.dropNear(player, warpedStack);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 0.8F);
         player.sendSystemMessage(Component.translatable("message.impendingdoom.armor_warped", warpedStack.getHoverName()).withStyle(ChatFormatting.DARK_PURPLE), true);
     }
@@ -120,7 +120,7 @@ public class DistortionEvent extends DoomEvent {
             ItemStack worn = player.getItemBySlot(slot);
             if (!isWarped(player, worn)) return;
             player.setItemSlot(slot, ItemStack.EMPTY);
-            if (!player.getInventory().add(worn)) player.drop(worn, true, false);
+            if (!player.getInventory().add(worn)) EventUtil.dropNear(player, worn);
             player.sendSystemMessage(Component.translatable("message.impendingdoom.armor_unwearable").withStyle(ChatFormatting.DARK_PURPLE), true);
         });
     }

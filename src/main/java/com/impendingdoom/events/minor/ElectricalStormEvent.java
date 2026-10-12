@@ -16,6 +16,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -60,7 +61,7 @@ public class ElectricalStormEvent extends DoomEvent {
             if (level.getRandom().nextInt(90) != 0) continue;
             BlockPos strike;
             List<Mob> monsters = level.getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(40),
-                    m -> m instanceof Enemy && !m.getTags().contains(CHARGED) && level.canSeeSky(m.blockPosition()));
+                    m -> m instanceof Enemy && !m.entityTags().contains(CHARGED) && level.canSeeSky(m.blockPosition()));
             if (!monsters.isEmpty() && level.getRandom().nextInt(3) == 0) {
                 strike = monsters.get(level.getRandom().nextInt(monsters.size())).blockPosition();
             } else {
@@ -68,7 +69,7 @@ public class ElectricalStormEvent extends DoomEvent {
                 if (!level.isLoaded(around)) continue;
                 strike = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, around);
             }
-            LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
+            LightningBolt bolt = EntityTypes.LIGHTNING_BOLT.create(level, EntitySpawnReason.EVENT);
             if (bolt != null) {
                 bolt.setPos(strike.getX() + 0.5, strike.getY(), strike.getZ() + 0.5);
                 level.addFreshEntity(bolt);
@@ -93,7 +94,7 @@ public class ElectricalStormEvent extends DoomEvent {
         Entity entity = event.getEntity();
         if (entity instanceof Mob mob && entity instanceof Enemy && !(entity instanceof Creeper)) {
             event.setCanceled(true); // charged instead of burned
-            if (!mob.getTags().contains(CHARGED)) charge(mob);
+            if (!mob.entityTags().contains(CHARGED)) charge(mob);
         }
     }
 
@@ -103,7 +104,7 @@ public class ElectricalStormEvent extends DoomEvent {
         if (!EventScheduler.isActive(ID) || level.getRandom().nextInt(5) != 0) return;
         BlockPos pos = bolt.blockPosition();
         EventUtil.defer(() -> {
-            Entity e = EventUtil.spawn(level, EntityType.BREEZE, pos);
+            Entity e = EventUtil.spawn(level, EntityTypes.BREEZE, pos);
             if (e instanceof Mob breeze) {
                 charge(breeze);
                 breeze.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, MobEffectInstance.INFINITE_DURATION, 0, false, false));
@@ -114,7 +115,7 @@ public class ElectricalStormEvent extends DoomEvent {
     @SubscribeEvent
     public static void onChargedTick(EntityTickEvent.Post event) {
         Entity e = event.getEntity();
-        if (e.tickCount % 8 != 0 || !(e.level() instanceof ServerLevel level) || !e.getTags().contains(CHARGED)) return;
+        if (e.tickCount % 8 != 0 || !(e.level() instanceof ServerLevel level) || !e.entityTags().contains(CHARGED)) return;
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, e.getX(), e.getY() + e.getBbHeight() * 0.6, e.getZ(), 3,
                 e.getBbWidth() * 0.5, e.getBbHeight() * 0.3, e.getBbWidth() * 0.5, 0.05);
     }
@@ -123,7 +124,7 @@ public class ElectricalStormEvent extends DoomEvent {
     public static void onHit(LivingDamageEvent.Post event) {
         Entity attacker = event.getSource().getEntity();
         if (attacker == null || event.getEntity() == attacker) return;
-        boolean charged = attacker.getTags().contains(CHARGED) || (attacker instanceof Creeper creeper && creeper.isPowered());
+        boolean charged = attacker.entityTags().contains(CHARGED) || (attacker instanceof Creeper creeper && creeper.isPowered());
         if (charged) {
             LivingEntity victim = event.getEntity();
             victim.addEffect(new MobEffectInstance(ModEffects.STUNNED, 20, 0));

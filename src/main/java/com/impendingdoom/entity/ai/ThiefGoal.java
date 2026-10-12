@@ -171,8 +171,8 @@ public class ThiefGoal extends Goal {
         ChunkPos center = thief.chunkPosition();
         for (int cx = -3; cx <= 3; cx++) {
             for (int cz = -3; cz <= 3; cz++) {
-                if (!level.hasChunk(center.x + cx, center.z + cz)) continue;
-                LevelChunk chunk = level.getChunk(center.x + cx, center.z + cz);
+                if (!level.hasChunk(center.x() + cx, center.z() + cz)) continue;
+                LevelChunk chunk = level.getChunk(center.x() + cx, center.z() + cz);
                 for (BlockEntity be : chunk.getBlockEntities().values()) {
                     if (!(be instanceof Container container) || container.isEmpty()) continue;
                     if (!(be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity)

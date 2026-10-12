@@ -2,7 +2,7 @@ package com.impendingdoom.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.HappyGhastHarnessModel;
+import net.minecraft.client.model.animal.ghast.HappyGhastHarnessModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;

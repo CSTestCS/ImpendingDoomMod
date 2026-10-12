@@ -29,6 +29,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -108,7 +109,7 @@ public class HuntedEvent extends DoomEvent {
                 // Some modded entities cannot be created this way.
             }
         }
-        if (list.isEmpty()) list.add(EntityType.ZOMBIE);
+        if (list.isEmpty()) list.add(EntityTypes.ZOMBIE);
         candidates = list;
         return list;
     }
@@ -170,7 +171,7 @@ public class HuntedEvent extends DoomEvent {
 
     private static void spawnMember(ServerLevel level, ServerPlayer owner, CompoundTag record, int slot, int gen, BlockPos origin) {
         Identifier typeId = Identifier.tryParse(record.getStringOr("type", "minecraft:zombie"));
-        EntityType<?> type = typeId == null ? EntityType.ZOMBIE : BuiltInRegistries.ENTITY_TYPE.getOptional(typeId).orElse(EntityType.ZOMBIE);
+        EntityType<?> type = typeId == null ? EntityTypes.ZOMBIE : BuiltInRegistries.ENTITY_TYPE.getOptional(typeId).orElse(EntityTypes.ZOMBIE);
         BlockPos pos = EventUtil.surfacePos(level, origin, 0, 4, level.getRandom());
         Entity entity = EventUtil.spawn(level, type, pos == null ? origin : pos);
         if (!(entity instanceof Mob mob)) {
@@ -235,14 +236,14 @@ public class HuntedEvent extends DoomEvent {
     }
 
     private static UUID owner(Entity e) {
-        return e.getTags().contains(TAG) ? EventUtil.uuid(e.getPersistentData(), OWNER) : null;
+        return e.entityTags().contains(TAG) ? EventUtil.uuid(e.getPersistentData(), OWNER) : null;
     }
 
     @Override
     public void onTick(ServerLevel level, CompoundTag data) {
         long time = level.getGameTime();
         if (time % 20 == 0) {
-            for (Mob hunter : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG) && m.isAlive())) {
+            for (Mob hunter : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.isAlive())) {
                 UUID ownerId = owner(hunter);
                 ServerPlayer owner = ownerId == null ? null : (ServerPlayer) level.getPlayerByUUID(ownerId);
                 if (owner == null || owner.isCreative() || owner.isSpectator()) continue;
@@ -294,7 +295,7 @@ public class HuntedEvent extends DoomEvent {
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
         // Hunters vanish; survivors are remembered for next time.
-        for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG))) {
+        for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG))) {
             m.discard();
         }
     }

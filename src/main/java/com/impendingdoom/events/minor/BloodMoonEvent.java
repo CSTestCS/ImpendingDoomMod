@@ -19,6 +19,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -52,8 +53,8 @@ public class BloodMoonEvent extends DoomEvent {
     private static final String DIG = "impendingdoom_dig";
     private static final List<Holder<MobEffect>> BUFFS = List.of(MobEffects.SPEED, MobEffects.STRENGTH, MobEffects.RESISTANCE,
             MobEffects.FIRE_RESISTANCE, MobEffects.JUMP_BOOST, MobEffects.INVISIBILITY);
-    private static final EntityType<?>[] EXTRA = {EntityType.ZOMBIE, EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SPIDER,
-            EntityType.CREEPER, EntityType.HUSK, EntityType.WITCH};
+    private static final EntityType<?>[] EXTRA = {EntityTypes.ZOMBIE, EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.SPIDER,
+            EntityTypes.CREEPER, EntityTypes.HUSK, EntityTypes.WITCH};
 
     public BloodMoonEvent() {
         super(ID, false, ChatFormatting.DARK_GREEN);
@@ -79,7 +80,7 @@ public class BloodMoonEvent extends DoomEvent {
     }
 
     private static void empower(Mob mob) {
-        if (mob.getTags().contains("impendingdoom.blood")) return;
+        if (mob.entityTags().contains("impendingdoom.blood")) return;
         mob.addTag("impendingdoom.blood");
         Holder<MobEffect> effect = BUFFS.get(mob.getRandom().nextInt(BUFFS.size()));
         mob.addEffect(new MobEffectInstance(effect, 24000, mob.getRandom().nextInt(2)));
@@ -140,7 +141,7 @@ public class BloodMoonEvent extends DoomEvent {
             float progress = dig.getFloatOr("progress", 0) + tool.getDestroySpeed(state) / (hardness * 30.0F) * 5.0F;
             dig.putFloat("progress", progress);
             zombie.getPersistentData().put(DIG, dig);
-            zombie.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+            zombie.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);
             if (progress >= 1.0F) {
                 level.destroyBlockProgress(zombie.getId(), pos, -1);
                 level.destroyBlock(pos, true, zombie);

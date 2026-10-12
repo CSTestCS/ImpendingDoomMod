@@ -29,7 +29,7 @@ public class WildfireEvent extends DoomEvent {
     private static boolean kindling(BlockState state) {
         return state.is(Blocks.GRASS_BLOCK) || state.is(BlockTags.LEAVES) || state.is(Blocks.SHORT_GRASS) || state.is(Blocks.TALL_GRASS)
                 || state.is(Blocks.FERN) || state.is(Blocks.LARGE_FERN) || state.is(Blocks.DEAD_BUSH) || state.is(BlockTags.FLOWERS)
-                || state.is(Blocks.HAY_BLOCK) || state.is(BlockTags.LOGS_THAT_BURN) || state.is(BlockTags.PLANKS);
+                || state.is(Blocks.HAY_BLOCK) || state.is(BlockTags.OVERWORLD_NATURAL_LOGS) || state.is(BlockTags.PLANKS);
     }
 
     @Override

@@ -52,14 +52,14 @@ public class SoulThievesEvent extends DoomEvent {
         if (time % 400 == 0) {
             for (ServerPlayer player : EventUtil.targets(level)) {
                 List<Animal> animals = level.getEntitiesOfClass(Animal.class, player.getBoundingBox().inflate(32),
-                        a -> !a.getTags().contains(TAG) && !a.isBaby() && !(a instanceof net.minecraft.world.entity.TamableAnimal t && t.isTame()));
+                        a -> !a.entityTags().contains(TAG) && !a.isBaby() && !(a instanceof net.minecraft.world.entity.TamableAnimal t && t.isTame()));
                 if (animals.isEmpty()) continue;
                 possess(animals.get(level.getRandom().nextInt(animals.size())));
             }
         }
         if (time % 10 == 0) {
-            for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG))) {
-                boolean empowered = mob.getTags().contains(EMPOWERED);
+            for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG))) {
+                boolean empowered = mob.entityTags().contains(EMPOWERED);
                 level.sendParticles(empowered ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.SOUL, mob.getX(), mob.getY() + mob.getBbHeight() * 0.6,
                         mob.getZ(), empowered ? 4 : 1, mob.getBbWidth() * 0.4, mob.getBbHeight() * 0.3, mob.getBbWidth() * 0.4, 0.01);
                 if (!empowered) siphon(level, mob);
@@ -74,7 +74,7 @@ public class SoulThievesEvent extends DoomEvent {
     }
 
     private static void addGoals(Mob mob) {
-        if (mob.getTags().contains(EMPOWERED)) {
+        if (mob.entityTags().contains(EMPOWERED)) {
             mob.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(mob, Player.class, true));
             mob.goalSelector.addGoal(0, new ForcedMeleeGoal(mob, 1.3, 6.0F));
         } else {
@@ -114,7 +114,7 @@ public class SoulThievesEvent extends DoomEvent {
 
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob mob && mob.getTags().contains(TAG)) {
+        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob mob && mob.entityTags().contains(TAG)) {
             addGoals(mob);
         }
     }
@@ -122,7 +122,7 @@ public class SoulThievesEvent extends DoomEvent {
     /** Siphoned souls are released on death. */
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof Mob mob && mob.getTags().contains(TAG) && mob.level() instanceof ServerLevel level) {
+        if (event.getEntity() instanceof Mob mob && mob.entityTags().contains(TAG) && mob.level() instanceof ServerLevel level) {
             int levels = mob.getPersistentData().getIntOr(LEVELS, 0);
             if (levels > 0) ExperienceOrb.award(level, mob.position(), levels * 17);
         }
@@ -131,7 +131,7 @@ public class SoulThievesEvent extends DoomEvent {
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
         // Possession lifts from creatures that never grew strong.
-        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG) && !m.getTags().contains(EMPOWERED))) {
+        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && !m.entityTags().contains(EMPOWERED))) {
             mob.removeTag(TAG);
             mob.goalSelector.removeAllGoals(g -> g instanceof CreepGoal);
         }

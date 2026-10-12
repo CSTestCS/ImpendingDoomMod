@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.LightLayer;
@@ -28,9 +29,9 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public class SolarEclipseEvent extends DoomEvent {
     public static final String ID = "solar_eclipse";
-    private static final EntityType<?>[] SPAWNS = {EntityType.ZOMBIE, EntityType.ZOMBIE, EntityType.SKELETON, EntityType.SKELETON,
-            EntityType.SPIDER, EntityType.CREEPER, EntityType.ENDERMAN, EntityType.WITCH, EntityType.CREAKING, EntityType.CREAKING,
-            EntityType.WARDEN};
+    private static final EntityType<?>[] SPAWNS = {EntityTypes.ZOMBIE, EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.SKELETON,
+            EntityTypes.SPIDER, EntityTypes.CREEPER, EntityTypes.ENDERMAN, EntityTypes.WITCH, EntityTypes.CREAKING, EntityTypes.CREAKING,
+            EntityTypes.WARDEN};
 
     public SolarEclipseEvent() {
         super(ID, true, ChatFormatting.DARK_RED);
@@ -45,7 +46,7 @@ public class SolarEclipseEvent extends DoomEvent {
             BlockPos pos = EventUtil.surfacePos(level, player.blockPosition(), 24, 64, r);
             if (pos == null || level.getBrightness(LightLayer.BLOCK, pos) > 0) continue;
             EntityType<?> type = SPAWNS[r.nextInt(SPAWNS.length)];
-            if (type == EntityType.WARDEN && (r.nextInt(4) != 0
+            if (type == EntityTypes.WARDEN && (r.nextInt(4) != 0
                     || !level.getEntitiesOfClass(net.minecraft.world.entity.monster.warden.Warden.class, player.getBoundingBox().inflate(96)).isEmpty())) {
                 continue;
             }
@@ -57,7 +58,7 @@ public class SolarEclipseEvent extends DoomEvent {
     @SubscribeEvent
     public static void onMobTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Mob mob) || !(mob.level() instanceof ServerLevel level)) return;
-        if (!mob.isOnFire() || !mob.getType().is(EntityTypeTags.UNDEAD) || !EventScheduler.isActive(ID)) return;
+        if (!mob.isOnFire() || !mob.getType().builtInRegistryHolder().is(EntityTypeTags.UNDEAD) || !EventScheduler.isActive(ID)) return;
         if (mob.isInLava() || level.getBlockState(mob.blockPosition()).is(Blocks.FIRE) || !level.canSeeSky(mob.blockPosition())) return;
         if (mob.getLastDamageSource() != null && mob.getLastDamageSource().getEntity() != null && mob.tickCount - mob.getLastHurtByMobTimestamp() < 100) return;
         mob.clearFire();

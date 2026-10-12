@@ -57,7 +57,7 @@ public class ForcedMeleeGoal extends Goal {
         double reach = mob.getBbWidth() * 1.4 + target.getBbWidth() * 0.5 + 0.8;
         if (cooldown <= 0 && mob.distanceToSqr(target) <= reach * reach && mob.level() instanceof ServerLevel level) {
             cooldown = 20;
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swingForAttack(InteractionHand.MAIN_HAND);
             float damage = EventUtil.hasAttribute(mob, Attributes.ATTACK_DAMAGE)
                     ? (float) mob.getAttributeValue(Attributes.ATTACK_DAMAGE) : fallbackDamage;
             damage = Math.max(damage, fallbackDamage);

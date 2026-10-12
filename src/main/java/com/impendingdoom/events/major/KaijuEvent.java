@@ -56,7 +56,7 @@ public class KaijuEvent extends DoomEvent {
             data.putLong("lastNight", day);
             spawnKaiju(level);
         }
-        List<Mob> kaiju = level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG) && m.isAlive());
+        List<? extends Mob> kaiju = level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.isAlive());
         if (level.getGameTime() % 20 == 0) {
             for (Mob k : kaiju) hunt(level, k, kaiju);
             updateBars(level, kaiju);
@@ -87,13 +87,13 @@ public class KaijuEvent extends DoomEvent {
         mob.setHealth(mob.getMaxHealth());
         mob.setCustomName(Component.translatable("entity.impendingdoom.kaiju", type.getDescription()).withStyle(ChatFormatting.DARK_RED));
         for (ServerPlayer p : level.players()) {
-            p.playNotifySound(SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 4.0F, 0.3F);
+            EventUtil.notifySound(p, SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 4.0F, 0.3F);
             p.sendSystemMessage(Component.translatable("message.impendingdoom.kaiju").withStyle(ChatFormatting.DARK_RED));
         }
     }
 
     /** Kaiju always know where the players are, but fight each other first. */
-    private static void hunt(ServerLevel level, Mob kaiju, List<Mob> all) {
+    private static void hunt(ServerLevel level, Mob kaiju, List<? extends Mob> all) {
         LivingEntity target = null;
         double best = Double.MAX_VALUE;
         for (Mob other : all) {
@@ -136,14 +136,14 @@ public class KaijuEvent extends DoomEvent {
         }
     }
 
-    private static void updateBars(ServerLevel level, List<Mob> kaiju) {
+    private static void updateBars(ServerLevel level, List<? extends Mob> kaiju) {
         BARS.keySet().removeIf(id -> {
             boolean gone = kaiju.stream().noneMatch(k -> k.getUUID().equals(id));
             if (gone) BARS.get(id).removeAllPlayers();
             return gone;
         });
         for (Mob k : kaiju) {
-            ServerBossEvent bar = BARS.computeIfAbsent(k.getUUID(), id -> new ServerBossEvent(k.getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS));
+            ServerBossEvent bar = BARS.computeIfAbsent(k.getUUID(), id -> new ServerBossEvent(java.util.UUID.randomUUID(), k.getDisplayName(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS));
             bar.setProgress(k.getHealth() / k.getMaxHealth());
             for (ServerPlayer p : level.players()) {
                 if (p.distanceToSqr(k) < 160 * 160) bar.addPlayer(p);
@@ -154,14 +154,14 @@ public class KaijuEvent extends DoomEvent {
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity().getTags().contains(TAG) && event.getEntity().level() instanceof ServerLevel level) {
+        if (event.getEntity().entityTags().contains(TAG) && event.getEntity().level() instanceof ServerLevel level) {
             level.playSound(null, event.getEntity().blockPosition(), SoundEvents.WITHER_DEATH, SoundSource.HOSTILE, 4.0F, 0.5F);
         }
     }
 
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
-        for (Mob k : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG))) k.discard();
+        for (Mob k : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG))) k.discard();
         BARS.values().forEach(ServerBossEvent::removeAllPlayers);
         BARS.clear();
     }

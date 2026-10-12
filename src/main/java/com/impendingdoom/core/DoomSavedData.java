@@ -9,7 +9,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 /** World-wide schedule and event state, stored on the overworld. */
 public final class DoomSavedData extends SavedData {
     public static final Codec<DoomSavedData> CODEC = CompoundTag.CODEC.xmap(DoomSavedData::load, DoomSavedData::save);
-    public static final SavedDataType<DoomSavedData> TYPE = new SavedDataType<>("impendingdoom", DoomSavedData::new, CODEC, null);
+    public static final SavedDataType<DoomSavedData> TYPE = new SavedDataType<>(com.impendingdoom.ImpendingDoom.id("state"), DoomSavedData::new, CODEC);
 
     public boolean initialized;
     /** Day index on which the last event (or the schedule) started. */

@@ -13,9 +13,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.golem.IronGolem;
@@ -46,11 +47,11 @@ public class ThievesEvent extends DoomEvent {
         if (!DayClock.isNight(level) || level.getGameTime() % 600 != 0) return;
         for (ServerPlayer player : EventUtil.targets(level)) {
             if (level.getRandom().nextInt(3) != 0) continue;
-            int existing = level.getEntitiesOfClass(Vindicator.class, player.getBoundingBox().inflate(96), v -> v.getTags().contains(TAG)).size();
+            int existing = level.getEntitiesOfClass(Vindicator.class, player.getBoundingBox().inflate(96), v -> v.entityTags().contains(TAG)).size();
             if (existing >= 4) continue;
             BlockPos pos = EventUtil.surfacePos(level, player.blockPosition(), 32, 48, level.getRandom());
             if (pos == null) continue;
-            Vindicator thief = EventUtil.spawn(level, EntityType.VINDICATOR, pos);
+            Vindicator thief = EventUtil.spawn(level, EntityTypes.VINDICATOR, pos);
             if (thief == null) continue;
             makeThief(thief);
         }
@@ -81,12 +82,12 @@ public class ThievesEvent extends DoomEvent {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !event.loadedFromDisk()) return;
-        if (event.getEntity() instanceof Vindicator v && v.getTags().contains(TAG)) setupGoals(v);
+        if (event.getEntity() instanceof Vindicator v && v.entityTags().contains(TAG)) setupGoals(v);
     }
 
     @SubscribeEvent
     public static void onDrops(LivingDropsEvent event) {
-        if (event.getEntity() instanceof Vindicator v && v.getTags().contains(TAG)) {
+        if (event.getEntity() instanceof Vindicator v && v.entityTags().contains(TAG)) {
             for (ItemStack stack : ThiefGoal.takeLoot(v)) {
                 event.getDrops().add(new net.minecraft.world.entity.item.ItemEntity(v.level(), v.getX(), v.getY(), v.getZ(), stack));
             }
@@ -98,7 +99,7 @@ public class ThievesEvent extends DoomEvent {
         // Thieves that have not stolen anything give up and leave.
         for (ServerPlayer player : level.players()) {
             for (Vindicator v : level.getEntitiesOfClass(Vindicator.class, new AABB(player.blockPosition()).inflate(128),
-                    v -> v.getTags().contains(TAG) && !ThiefGoal.hasLoot(v))) {
+                    v -> v.entityTags().contains(TAG) && !ThiefGoal.hasLoot(v))) {
                 v.discard();
             }
         }

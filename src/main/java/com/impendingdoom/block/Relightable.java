@@ -27,7 +27,7 @@ public interface Relightable {
         if (!level.isClientSide()) {
             level.setBlock(pos, self.litState(state), Block.UPDATE_ALL);
             level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.4F + 0.8F);
-            stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+            stack.hurtAndBreak(1, player, hand);
         }
         return InteractionResult.SUCCESS;
     }

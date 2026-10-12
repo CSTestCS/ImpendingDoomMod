@@ -150,6 +150,18 @@ public final class EventUtil {
         player.connection.send(new ClientboundSoundPacket(holder, SoundSource.HOSTILE, x, y, z, volume, pitch, player.getRandom().nextLong()));
     }
 
+    /** Drops an item at an entity's feet. */
+    public static void dropNear(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.item.ItemStack stack) {
+        net.minecraft.world.entity.item.ItemEntity item = entity.createItemStackToDrop(stack, true, false);
+        if (item != null) entity.level().addFreshEntity(item);
+    }
+
+    /** Plays a sound at the player that only they hear. */
+    public static void notifySound(ServerPlayer player, SoundEvent sound, SoundSource source, float volume, float pitch) {
+        Holder<SoundEvent> holder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound);
+        player.connection.send(new ClientboundSoundPacket(holder, source, player.getX(), player.getY(), player.getZ(), volume, pitch, player.getRandom().nextLong()));
+    }
+
     public static UUID uuid(CompoundTag tag, String key) {
         String s = tag.getStringOr(key, "");
         if (s.isEmpty()) return null;
@@ -161,6 +173,6 @@ public final class EventUtil {
     }
 
     public static boolean hasTag(Entity entity, String tag) {
-        return entity.getTags().contains(tag);
+        return entity.entityTags().contains(tag);
     }
 }

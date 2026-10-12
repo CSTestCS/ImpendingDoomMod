@@ -1,5 +1,7 @@
 package com.impendingdoom.events.major;
 
+import com.impendingdoom.util.EventUtil;
+
 import com.impendingdoom.ImpendingDoom;
 import com.impendingdoom.core.DayClock;
 import com.impendingdoom.core.DoomEvent;
@@ -103,7 +105,7 @@ public class SummerEvent extends DoomEvent {
                 ItemStack stack = player.getItemBySlot(slot);
                 if (!stack.is(ModTags.HEAVY_ARMOR)) continue;
                 player.setItemSlot(slot, ItemStack.EMPTY);
-                if (!player.getInventory().add(stack)) player.drop(stack, true, false);
+                if (!player.getInventory().add(stack)) EventUtil.dropNear(player, stack);
             }
             player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 200, 1));
             player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160, 0));

@@ -146,7 +146,7 @@ public class TornadoEntity extends Entity {
                 lift = 0.6;
             }
             e.setDeltaMovement(e.getDeltaMovement().scale(0.85).add(push.x, lift, push.z));
-            e.hurtMarked = true;
+            e.needsSync = true;
             e.fallDistance = Math.min(e.fallDistance, 3.0F);
         }
     }
@@ -162,7 +162,7 @@ public class TornadoEntity extends Entity {
             if (!EventUtil.isBreakable(level, pos, state, 2.0F) || !level.getBlockState(pos.above()).isAir()) continue;
             FallingBlockEntity fb = FallingBlockEntity.fall(level, pos, state);
             fb.setDeltaMovement((random.nextDouble() - 0.5) * 0.6, 0.8 + random.nextDouble() * 0.6, (random.nextDouble() - 0.5) * 0.6);
-            fb.hurtMarked = true;
+            fb.needsSync = true;
         }
     }
 }

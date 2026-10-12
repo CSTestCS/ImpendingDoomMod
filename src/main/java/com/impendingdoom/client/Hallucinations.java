@@ -9,6 +9,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
@@ -21,8 +22,8 @@ import java.util.Map;
  * when looked at directly or after a few seconds.
  */
 public final class Hallucinations {
-    private static final EntityType<?>[] MOBS = {EntityType.ZOMBIE, EntityType.SKELETON, EntityType.CREEPER, EntityType.ENDERMAN,
-            EntityType.SPIDER, EntityType.WITCH, EntityType.CREAKING};
+    private static final EntityType<?>[] MOBS = {EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.CREEPER, EntityTypes.ENDERMAN,
+            EntityTypes.SPIDER, EntityTypes.WITCH, EntityTypes.CREAKING};
     private static final Map<Integer, Integer> LIVES = new HashMap<>();
     private static int nextId = -1_000_000;
 

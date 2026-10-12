@@ -84,7 +84,7 @@ public class UnstableEvent extends DoomEvent {
 
     private static void rumble(ServerLevel level, RandomSource r) {
         for (ServerPlayer p : level.players()) {
-            p.playNotifySound(SoundEvents.WARDEN_DIG, SoundSource.AMBIENT, 0.6F + intensity, 0.3F);
+            EventUtil.notifySound(p, SoundEvents.WARDEN_DIG, SoundSource.AMBIENT, 0.6F + intensity, 0.3F);
             BlockPos below = p.blockPosition().below();
             BlockState ground = level.getBlockState(below);
             if (!ground.isAir()) {
@@ -92,7 +92,7 @@ public class UnstableEvent extends DoomEvent {
             }
             if (p.onGround() && !p.isCreative() && r.nextInt(3) == 0) {
                 p.push((r.nextDouble() - 0.5) * 0.15 * intensity, 0.05 * intensity, (r.nextDouble() - 0.5) * 0.15 * intensity);
-                p.hurtMarked = true;
+                p.needsSync = true;
             }
         }
     }

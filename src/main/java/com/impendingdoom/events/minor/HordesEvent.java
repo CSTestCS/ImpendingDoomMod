@@ -48,7 +48,7 @@ public class HordesEvent extends DoomEvent {
             for (ServerPlayer player : EventUtil.targets(level)) spawnHorde(level, player);
         }
         if (level.getGameTime() % 100 == 0) {
-            for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG) && m.getTarget() == null)) {
+            for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.getTarget() == null)) {
                 UUID prey = EventUtil.uuid(m.getPersistentData(), PREY);
                 Player p = prey == null ? null : level.getPlayerByUUID(prey);
                 if (p != null && !p.isCreative() && m.distanceToSqr(p) < 24 * 24) m.setTarget(p);
@@ -89,13 +89,13 @@ public class HordesEvent extends DoomEvent {
 
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob m && m.getTags().contains(TAG)) addMigration(m);
+        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob m && m.entityTags().contains(TAG)) addMigration(m);
     }
 
     /** Zombie-style reinforcements: a hurt member may call another of its kind. */
     @SubscribeEvent
     public static void onHurt(LivingDamageEvent.Post event) {
-        if (!(event.getEntity() instanceof Mob mob) || !(mob.level() instanceof ServerLevel level) || !mob.getTags().contains(TAG)) return;
+        if (!(event.getEntity() instanceof Mob mob) || !(mob.level() instanceof ServerLevel level) || !mob.entityTags().contains(TAG)) return;
         if (!EventScheduler.isActive(ID) || !(event.getSource().getEntity() instanceof Player) || level.getRandom().nextFloat() > 0.15F) return;
         String hordeId = mob.getPersistentData().getStringOr(HORDE, "");
         long size = level.getEntities(EntityTypeTest.forClass(Mob.class), m -> hordeId.equals(m.getPersistentData().getStringOr(HORDE, ""))).size();

@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.bee.Bee;
@@ -53,7 +54,7 @@ public class SwarmsEvent extends DoomEvent {
         String id = UUID.randomUUID().toString();
         int size = 10 + level.getRandom().nextInt(8);
         for (int i = 0; i < size; i++) {
-            Bee bee = EntityType.BEE.create(level, EntitySpawnReason.EVENT);
+            Bee bee = EntityTypes.BEE.create(level, EntitySpawnReason.EVENT);
             if (bee == null) continue;
             bee.setPos(origin.getX() + level.getRandom().nextGaussian(), origin.getY() + 4 + level.getRandom().nextInt(3),
                     origin.getZ() + level.getRandom().nextGaussian());
@@ -68,7 +69,7 @@ public class SwarmsEvent extends DoomEvent {
     }
 
     private static void tickSwarms(ServerLevel level) {
-        List<Bee> bees = level.getEntities(EntityTypeTest.forClass(Bee.class), b -> b.getTags().contains(TAG));
+        List<? extends Bee> bees = level.getEntities(EntityTypeTest.forClass(Bee.class), b -> b.entityTags().contains(TAG));
         long time = level.getGameTime();
         for (Bee bee : bees) {
             if (time - bee.getPersistentData().getLongOr("impendingdoom_born", time) > 3600) {
@@ -94,6 +95,6 @@ public class SwarmsEvent extends DoomEvent {
 
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
-        for (Bee bee : level.getEntities(EntityTypeTest.forClass(Bee.class), b -> b.getTags().contains(TAG))) bee.discard();
+        for (Bee bee : level.getEntities(EntityTypeTest.forClass(Bee.class), b -> b.entityTags().contains(TAG))) bee.discard();
     }
 }

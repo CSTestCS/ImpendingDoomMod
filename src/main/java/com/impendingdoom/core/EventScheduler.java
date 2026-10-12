@@ -288,9 +288,9 @@ public final class EventScheduler {
         DoomEvent next = EventRegistry.get(d.nextEvent);
         if (next == null) return;
         ItemStack omen = createOmen(next, nextEventDay((ServerLevel) player.level(), d));
-        if (!player.getInventory().add(omen)) player.drop(omen, false);
+        if (!player.getInventory().add(omen)) EventUtil.dropNear(player, omen);
         player.getPersistentData().putInt(OMEN_KEY, d.omenSerial);
-        player.playNotifySound(SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 0.6F);
+        EventUtil.notifySound(player, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 0.6F);
     }
 
     private static void announce(ServerLevel level, Component title, Component subtitle, boolean major) {
@@ -298,7 +298,7 @@ public final class EventScheduler {
             player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 80, 20));
             player.connection.send(new ClientboundSetTitleTextPacket(title));
             player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
-            player.playNotifySound(major ? SoundEvents.ENDER_DRAGON_GROWL : SoundEvents.WITHER_AMBIENT, SoundSource.MASTER, 0.8F, 0.7F);
+            EventUtil.notifySound(player, major ? SoundEvents.ENDER_DRAGON_GROWL : SoundEvents.WITHER_AMBIENT, SoundSource.MASTER, 0.8F, 0.7F);
         }
     }
 

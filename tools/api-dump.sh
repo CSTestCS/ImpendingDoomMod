@@ -8,7 +8,13 @@ echo "===API-DUMP-BEGIN==="
 while read -r cls; do
   [ -z "$cls" ] && continue
   echo "===CLASS $cls"
-  javap -cp "$CP" -public "$cls" 2>&1
+  if ! javap -cp "$CP" -public "$cls" 2>&1; then
+    simple="${cls##*.}"; simple="${simple%%\$*}"
+    echo "===MISSING $cls"
+    for j in $(echo "$CP" | tr ':' ' '); do
+      case "$j" in *.jar) unzip -Z1 "$j" 2>/dev/null | grep -E "/${simple}\.class$" | sed "s|^|  moved-to: |" ;; esac
+    done
+  fi
 done < tools/api-classes.txt
 IFS=':' read -ra JARS <<< "$CP"
 while read -r pat; do

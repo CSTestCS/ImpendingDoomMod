@@ -55,7 +55,7 @@ public class BloodlustEvent extends DoomEvent {
     }
 
     private static void haze(Mob mob) {
-        if (mob.getTags().contains(TAG) || mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
+        if (mob.entityTags().contains(TAG) || mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
         mob.addEffect(new MobEffectInstance(ModEffects.BLOODLUST_HAZE, DURATION, 0));
         PacketDistributor.sendToPlayersTrackingEntity(mob, new EntityMarkPayload(mob.getId(), EntityMarkPayload.SHAKING));
     }
@@ -68,7 +68,7 @@ public class BloodlustEvent extends DoomEvent {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel) || !(event.getEntity() instanceof Mob mob)) return;
-        if (mob.getTags().contains(TAG)) {
+        if (mob.entityTags().contains(TAG)) {
             addBloodlustGoals(mob);
         } else if (!event.loadedFromDisk() && EventScheduler.isActive(ID) && canFight(mob)) {
             EventUtil.defer(() -> haze(mob));
@@ -109,7 +109,7 @@ public class BloodlustEvent extends DoomEvent {
     @SubscribeEvent
     public static void onTick(EntityTickEvent.Post event) {
         Entity e = event.getEntity();
-        if (e.tickCount % 4 != 0 || !(e.level() instanceof ServerLevel level) || !e.getTags().contains(TAG)) return;
+        if (e.tickCount % 4 != 0 || !(e.level() instanceof ServerLevel level) || !e.entityTags().contains(TAG)) return;
         Vec3 look = e.getViewVector(1.0F).multiply(1, 0, 1).normalize();
         Vec3 side = new Vec3(-look.z, 0, look.x).scale(0.15 * Math.max(1, e.getBbWidth()));
         double y = e.getY() + e.getBbHeight() + 0.25;
@@ -119,7 +119,7 @@ public class BloodlustEvent extends DoomEvent {
 
     @SubscribeEvent
     public static void onKill(LivingDeathEvent event) {
-        if (!(event.getSource().getEntity() instanceof Mob killer) || !killer.getTags().contains(TAG)) return;
+        if (!(event.getSource().getEntity() instanceof Mob killer) || !killer.entityTags().contains(TAG)) return;
         int kills = killer.getPersistentData().getIntOr("impendingdoom_kills", 0) + 1;
         killer.getPersistentData().putInt("impendingdoom_kills", kills);
         EventUtil.addModifier(killer, Attributes.SCALE, "bloodlust_scale", Math.min(2.0, kills * 0.1), AttributeModifier.Operation.ADD_MULTIPLIED_BASE);

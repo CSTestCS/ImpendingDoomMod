@@ -52,7 +52,7 @@ public class MonsterMutationsEvent extends DoomEvent {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel) || event.loadedFromDisk() || !EventScheduler.isActive(ID)) return;
-        if (event.getEntity() instanceof Mob mob && !mob.getTags().contains(TAG) && DoomConfig.listContains(DoomConfig.MUTATION_MOBS, mob.getType())) {
+        if (event.getEntity() instanceof Mob mob && !mob.entityTags().contains(TAG) && DoomConfig.listContains(DoomConfig.MUTATION_MOBS, mob.getType())) {
             mutate(mob, mob.getRandom());
         }
     }
@@ -80,7 +80,7 @@ public class MonsterMutationsEvent extends DoomEvent {
     }
 
     private static String ability(Entity entity) {
-        return entity.getTags().contains(TAG) ? entity.getPersistentData().getStringOr(ABILITY, "") : "";
+        return entity.entityTags().contains(TAG) ? entity.getPersistentData().getStringOr(ABILITY, "") : "";
     }
 
     @SubscribeEvent
@@ -99,14 +99,14 @@ public class MonsterMutationsEvent extends DoomEvent {
                 if (mob.onGround() && dist > 3 && dist < 12 && mob.getRandom().nextInt(3) == 0) {
                     Vec3 dir = target.position().subtract(mob.position()).normalize();
                     mob.setDeltaMovement(dir.x * 1.1, 0.6, dir.z * 1.1);
-                    mob.hurtMarked = true;
+                    mob.needsSync = true;
                 }
             }
             case "blinker" -> {
                 if (dist > 4 && dist < 24 && mob.getRandom().nextInt(6) == 0) {
                     level.sendParticles(ParticleTypes.PORTAL, mob.getX(), mob.getY() + 1, mob.getZ(), 30, 0.4, 0.8, 0.4, 0.2);
                     Vec3 behind = target.position().subtract(target.getViewVector(1.0F).multiply(2, 0, 2));
-                    mob.randomTeleport(behind.x, target.getY(), behind.z, true);
+                    mob.randomTeleport(behind.x, target.getY(), behind.z, true, state -> true);
                 }
             }
             default -> {
@@ -131,7 +131,7 @@ public class MonsterMutationsEvent extends DoomEvent {
             }
         }
         if (ability(victim).equals("thorny") && attacker instanceof LivingEntity living && attacker != victim) {
-            living.hurtServer(level, victim.damageSources().thorns(victim), Math.max(1.0F, event.getNewDamage() * 0.35F));
+            living.hurtServer(level, victim.damageSources().thorns(victim), Math.max(1.0F, event.getInflictedDamage() * 0.35F));
         }
     }
 

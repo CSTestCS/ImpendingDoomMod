@@ -111,8 +111,7 @@ public class BlackoutEvent extends DoomEvent {
             event.getLevel().setBlockAndUpdate(event.getPos(),
                     Blocks.JACK_O_LANTERN.defaultBlockState().setValue(CarvedPumpkinBlock.FACING, state.getValue(CarvedPumpkinBlock.FACING)));
             event.getLevel().playSound(null, event.getPos(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
-            stack.hurtAndBreak(1, player, event.getHand() == InteractionHand.MAIN_HAND
-                    ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+            stack.hurtAndBreak(1, player, event.getHand());
         }
         event.setCanceled(true);
     }

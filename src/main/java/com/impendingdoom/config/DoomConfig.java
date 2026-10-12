@@ -3,6 +3,7 @@ package com.impendingdoom.config;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
@@ -84,13 +85,13 @@ public final class DoomConfig {
 
     public static EntityType<?> randomType(ModConfigSpec.ConfigValue<List<? extends String>> list, net.minecraft.util.RandomSource random) {
         List<? extends String> ids = list.get();
-        if (ids.isEmpty()) return EntityType.ZOMBIE;
+        if (ids.isEmpty()) return EntityTypes.ZOMBIE;
         for (int attempt = 0; attempt < 8; attempt++) {
             Identifier id = Identifier.tryParse(ids.get(random.nextInt(ids.size())));
             if (id == null) continue;
             var type = BuiltInRegistries.ENTITY_TYPE.getOptional(id);
             if (type.isPresent()) return type.get();
         }
-        return EntityType.ZOMBIE;
+        return EntityTypes.ZOMBIE;
     }
 }

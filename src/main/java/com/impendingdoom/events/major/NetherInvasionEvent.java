@@ -20,6 +20,7 @@ import net.minecraft.tags.StructureTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -80,12 +81,12 @@ public class NetherInvasionEvent extends DoomEvent {
                 List<BlockPos> portals = litPortals(level, player.blockPosition());
                 if (portals.isEmpty() || r.nextInt(3) != 0) continue;
                 BlockPos portal = portals.get(r.nextInt(portals.size()));
-                long invaders = level.getEntitiesOfClass(Mob.class, new AABB(portal).inflate(64), m -> m.getTags().contains(TAG)).size();
+                long invaders = level.getEntitiesOfClass(Mob.class, new AABB(portal).inflate(64), m -> m.entityTags().contains(TAG)).size();
                 if (invaders < 24) spawnGroup(level, portal, r);
             }
         }
         if (time % 40 == 0) {
-            for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG) && m.isAlive())) {
+            for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.isAlive())) {
                 behave(level, mob, r);
             }
         }
@@ -149,21 +150,21 @@ public class NetherInvasionEvent extends DoomEvent {
             int roll = r.nextInt(20);
             if (roll < 2) {
                 // Ghast rider
-                Entity g = EventUtil.spawn(level, EntityType.GHAST, pos.above(6));
+                Entity g = EventUtil.spawn(level, EntityTypes.GHAST, pos.above(6));
                 if (g instanceof Ghast ghast) {
                     invader(ghast);
                     // Purely cosmetic: rendered by GhastHarnessLayer, never dropped.
                     GearUtil.equip(ghast, EquipmentSlot.BODY, new ItemStack(Items.RED_HARNESS), 0.0F);
                     AbstractPiglin rider = piglin(level, pos, r, false);
-                    if (rider != null) rider.startRiding(ghast, true);
+                    if (rider != null) rider.startRiding(ghast, true, true);
                 }
             } else if (roll < 5) {
-                Entity h = EventUtil.spawn(level, EntityType.HOGLIN, pos);
+                Entity h = EventUtil.spawn(level, EntityTypes.HOGLIN, pos);
                 if (h instanceof Hoglin hoglin) {
                     invader(hoglin);
                     hoglin.setImmuneToZombification(true);
                     AbstractPiglin rider = piglin(level, pos, r, false);
-                    if (rider != null) rider.startRiding(hoglin, true);
+                    if (rider != null) rider.startRiding(hoglin, true, true);
                 }
             } else {
                 piglin(level, pos, r, roll < 9);
@@ -172,7 +173,7 @@ public class NetherInvasionEvent extends DoomEvent {
     }
 
     private static AbstractPiglin piglin(ServerLevel level, BlockPos pos, RandomSource r, boolean brute) {
-        Entity e = EventUtil.spawn(level, brute ? EntityType.PIGLIN_BRUTE : EntityType.PIGLIN, pos);
+        Entity e = EventUtil.spawn(level, brute ? EntityTypes.PIGLIN_BRUTE : EntityTypes.PIGLIN, pos);
         if (!(e instanceof AbstractPiglin piglin)) return null;
         invader(piglin);
         piglin.setImmuneToZombification(true);
@@ -196,7 +197,7 @@ public class NetherInvasionEvent extends DoomEvent {
             // Hostile to players; otherwise hunts passive mobs the way piglins hunt hoglins.
             target = level.getNearestPlayer(mob.getX(), mob.getY(), mob.getZ(), 32, p -> !((Player) p).isCreative() && !p.isSpectator());
             if (target == null) {
-                List<Animal> prey = level.getEntitiesOfClass(Animal.class, mob.getBoundingBox().inflate(24), a -> !a.getTags().contains(TAG));
+                List<Animal> prey = level.getEntitiesOfClass(Animal.class, mob.getBoundingBox().inflate(24), a -> !a.entityTags().contains(TAG));
                 if (!prey.isEmpty()) target = prey.get(r.nextInt(prey.size()));
             }
             if (target != null) {
@@ -217,26 +218,26 @@ public class NetherInvasionEvent extends DoomEvent {
         Vec3 dir = aim.subtract(piglin.getEyePosition());
         bottle.shoot(dir.x, dir.y + dir.horizontalDistance() * 0.2, dir.z, 0.75F, 6.0F);
         level.addFreshEntity(bottle);
-        piglin.swing(net.minecraft.world.InteractionHand.OFF_HAND);
+        piglin.swingForAttack(net.minecraft.world.InteractionHand.OFF_HAND);
     }
 
     /** Invaders never fight each other (hoglin mounts included). */
     @SubscribeEvent
     public static void onTarget(LivingChangeTargetEvent event) {
         LivingEntity target = event.getNewAboutToBeSetTarget();
-        if (target != null && event.getEntity().getTags().contains(TAG) && target.getTags().contains(TAG)) event.setCanceled(true);
+        if (target != null && event.getEntity().entityTags().contains(TAG) && target.entityTags().contains(TAG)) event.setCanceled(true);
     }
 
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity().getTags().contains(TAG) && !EventScheduler.isActive(ID)) {
+        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity().entityTags().contains(TAG) && !EventScheduler.isActive(ID)) {
             event.setCanceled(true);
         }
     }
 
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
-        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.getTags().contains(TAG))) mob.discard();
+        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG))) mob.discard();
     }
 
 }

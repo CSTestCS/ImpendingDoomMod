@@ -97,7 +97,7 @@ public class SpringEvent extends DoomEvent {
     @SubscribeEvent
     public static void onAnimalSpawn(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !(event.getEntity() instanceof Animal animal)) return;
-        if (animal.getTags().contains(ALPHA)) {
+        if (animal.entityTags().contains(ALPHA)) {
             if (event.loadedFromDisk()) addAlphaGoals(animal);
             return;
         }
