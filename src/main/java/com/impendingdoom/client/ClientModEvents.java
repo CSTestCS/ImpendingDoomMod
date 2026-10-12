@@ -23,6 +23,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.color.block.BlockTintSource;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -38,7 +40,7 @@ import java.util.List;
 
 @EventBusSubscriber(modid = ImpendingDoom.MODID, value = Dist.CLIENT)
 public final class ClientModEvents {
-    private static final int[] AUTUMN = {0xC0392B, 0xD35400, 0xE67E22, 0xF1C40F, 0xA93226, 0xF39C12};
+    private static final int[] AUTUMN = {0xFFC0392B, 0xFFD35400, 0xFFE67E22, 0xFFF1C40F, 0xFFA93226, 0xFFF39C12};
 
     private ClientModEvents() {}
 
@@ -111,16 +113,37 @@ public final class ClientModEvents {
 
     /** Fall leaves: red, orange and yellow. */
     @SubscribeEvent
-    public static void blockColors(RegisterColorHandlersEvent.Block event) {
-        event.register((state, level, pos, tint) -> leafColor(level, pos, 0x48B518),
+    public static void blockColors(RegisterColorHandlersEvent.BlockTintSources event) {
+        event.register(List.of(new LeafTint(0xFF48B518, true)),
                 Blocks.OAK_LEAVES, Blocks.DARK_OAK_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.MANGROVE_LEAVES, Blocks.VINE);
-        event.register((state, level, pos, tint) -> ActiveEvents.clientActive(FallEvent.ID) ? autumn(pos) : 0x80A755, Blocks.BIRCH_LEAVES);
-        event.register((state, level, pos, tint) -> autumn(pos), ModBlocks.FALLEN_LEAVES.get(), ModBlocks.LEAF_PILE.get());
+        event.register(List.of(new LeafTint(0xFF80A755, false)), Blocks.BIRCH_LEAVES);
+        event.register(List.of(new AutumnTint()), ModBlocks.FALLEN_LEAVES.get(), ModBlocks.LEAF_PILE.get());
     }
 
-    private static int leafColor(BlockAndTintGetter level, BlockPos pos, int fallback) {
-        if (pos != null && ActiveEvents.clientActive(FallEvent.ID)) return autumn(pos);
-        return level != null && pos != null ? BiomeColors.getAverageFoliageColor(level, pos) : fallback;
+    /** Biome foliage color normally (or a fixed color), autumn colors during Fall. */
+    private record LeafTint(int fallback, boolean biome) implements BlockTintSource {
+        @Override
+        public int color(BlockState state) {
+            return fallback;
+        }
+
+        @Override
+        public int colorInWorld(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+            if (ActiveEvents.clientActive(FallEvent.ID)) return autumn(pos);
+            return biome ? BiomeColors.getAverageFoliageColor(level, pos) : fallback;
+        }
+    }
+
+    private record AutumnTint() implements BlockTintSource {
+        @Override
+        public int color(BlockState state) {
+            return AUTUMN[1];
+        }
+
+        @Override
+        public int colorInWorld(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+            return autumn(pos);
+        }
     }
 
     private static int autumn(BlockPos pos) {

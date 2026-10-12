@@ -18,7 +18,7 @@ public final class ClientPayloadHandler {
         boolean isFall = ActiveEvents.clientActive(FallEvent.ID);
         if (wasFall != isFall && Minecraft.getInstance().levelRenderer != null) {
             // Leaf tint changed: rebuild chunk meshes.
-            Minecraft.getInstance().levelRenderer.allChanged();
+            Minecraft.getInstance().levelRenderer.resetLevelRenderData();
         }
     }
 
