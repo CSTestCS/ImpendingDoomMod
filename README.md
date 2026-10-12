@@ -12,7 +12,8 @@ Events come in two kinds:
 - An event begins every **7 Minecraft days**. The mod counts Minecraft days (the world's day time), not real time, so sleeping through the night brings events sooner.
 - The first **3** events are minor and the 4th is major, and that repeats forever.
 - When an event begins, the mod picks the next event at random and gives every player an **Omen**. Its name and lore say which event comes next, whether it is minor or major, and roughly which day it arrives. Right-click the Omen to read it again; it also tells you if fate has changed since. Players who were offline get their Omen when they log in.
-- The seasons are major events. They don't have to be evenly spaced, but they always come in order: **Summer → Fall → Winter → Spring → Summer…**
+- The seasons are major events. They don't have to be evenly spaced, but they always come in order: **Summer → Fall → Winter → Spring → Summer…** A season stays in effect, alongside other major events, until the next season begins.
+- In game, players are only told when an event begins (its name as a title and one chat line). Events are never explained.
 
 Both numbers can be changed with gamerules:
 
@@ -28,7 +29,7 @@ Both numbers can be changed with gamerules:
 | `/impendingdoom status` | current minor and major events, the next event and when it arrives (anyone can run it) |
 | `/impendingdoom list` | every event and its id |
 | `/impendingdoom trigger [event]` | start the foretold event (or the one named) right now (op) |
-| `/impendingdoom foretell <event>` | change the next event; players get new Omens (op) |
+| `/impendingdoom next <event>` | choose the next event; players get new Omens (op). `foretell` is an alias |
 | `/impendingdoom end minor\|major` | end the running event (op) |
 | `/impendingdoom days <n>` / `minors <n>` | shortcuts for the two gamerules (op) |
 
