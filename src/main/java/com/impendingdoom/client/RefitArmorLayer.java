@@ -138,8 +138,9 @@ public class RefitArmorLayer<S extends LivingEntityRenderState, M extends Entity
                 for (int i = 0; i < fitted.size(); i++) emit(fitted.get(i), fits.get(i), consumer, light, finalColor);
             });
         }
-        if (stack.hasFoil()) {
-            collector.submitCustomGeometry(poseStack, RenderTypes.armorEntityGlint(), (pose, consumer) -> {
+        if (stack.hasFoil() && !layers.isEmpty()) {
+            Identifier glintTexture = layers.get(0).textureId().withPath(p -> "textures/entity/equipment/" + layerType.getSerializedName() + "/" + p + ".png");
+            collector.submitCustomGeometry(poseStack, RenderTypes.armorCutoutNoCullGlint(glintTexture), (pose, consumer) -> {
                 for (int i = 0; i < fitted.size(); i++) emit(fitted.get(i), fits.get(i), consumer, light, 0xFFFFFFFF);
             });
         }

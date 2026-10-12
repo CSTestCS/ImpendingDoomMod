@@ -49,7 +49,7 @@ public class ElectricalStormEvent extends DoomEvent {
 
     @Override
     public void onStart(ServerLevel level, CompoundTag data) {
-        level.setWeatherParameters(0, 36000, true, true);
+        EventUtil.setWeather(level, "thunder", 36000);
     }
 
     @Override

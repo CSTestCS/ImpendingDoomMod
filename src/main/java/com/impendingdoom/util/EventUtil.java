@@ -150,6 +150,13 @@ public final class EventUtil {
         player.connection.send(new ClientboundSoundPacket(holder, SoundSource.HOSTILE, x, y, z, volume, pitch, player.getRandom().nextLong()));
     }
 
+    /** Sets the weather with the vanilla /weather command. Kind is clear, rain or thunder. */
+    public static void setWeather(ServerLevel level, String kind, int ticks) {
+        var server = level.getServer();
+        server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),
+                "weather " + kind + " " + Math.max(1, ticks) + "t");
+    }
+
     /** Drops an item at an entity's feet. */
     public static void dropNear(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.item.ItemStack stack) {
         net.minecraft.world.entity.item.ItemEntity item = entity.createItemStackToDrop(stack, true, false);

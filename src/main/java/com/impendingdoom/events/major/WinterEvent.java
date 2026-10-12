@@ -1,5 +1,6 @@
 package com.impendingdoom.events.major;
 
+import com.impendingdoom.util.EventUtil;
 import com.impendingdoom.ImpendingDoom;
 import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.core.EventScheduler;
@@ -58,9 +59,9 @@ public class WinterEvent extends DoomEvent {
             blizzard = !blizzard && level.getRandom().nextInt(3) == 0;
             timer = blizzard ? 6000 + level.getRandom().nextInt(6000) : 12000 + level.getRandom().nextInt(12000);
             data.putBoolean("blizzard", blizzard);
-            level.setWeatherParameters(0, timer + 200, true, blizzard);
+            EventUtil.setWeather(level, (blizzard ? "thunder" : "rain"), timer + 200);
         } else if (!level.isRaining() || level.isThundering() != blizzard) {
-            level.setWeatherParameters(0, timer + 200, true, blizzard);
+            EventUtil.setWeather(level, (blizzard ? "thunder" : "rain"), timer + 200);
         }
         data.putInt("weatherTimer", timer);
         long time = level.getGameTime();
@@ -156,6 +157,6 @@ public class WinterEvent extends DoomEvent {
 
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
-        level.setWeatherParameters(6000, 0, false, false);
+        EventUtil.setWeather(level, "clear", 6000);
     }
 }

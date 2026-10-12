@@ -31,7 +31,7 @@ public class TornadoEvent extends DoomEvent {
     public void onStart(ServerLevel level, CompoundTag data) {
         data.putInt("remaining", 12000 + level.getRandom().nextInt(6000));
         spawn(level, data);
-        level.setWeatherParameters(0, 18000, true, false);
+        EventUtil.setWeather(level, "rain", 18000);
     }
 
     private void spawn(ServerLevel level, CompoundTag data) {

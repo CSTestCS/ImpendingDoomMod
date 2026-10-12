@@ -21,7 +21,7 @@ while read -r pat; do
   [ -z "$pat" ] && continue
   echo "===SEARCH $pat"
   for j in "${JARS[@]}"; do
-    case "$j" in *.jar) unzip -Z1 "$j" 2>/dev/null | grep -E "$pat" | grep '\.class$' | sed "s|^|$(basename "$j"): |" ;; esac
+    case "$j" in *minecraft*.jar|*neoforge*.jar) unzip -Z1 "$j" 2>/dev/null | grep -E "$pat" | grep '\.class$' | sed "s|^|$(basename "$j"): |" ;; esac
   done
 done < tools/api-search.txt
 while IFS='|' read -r cls pat; do

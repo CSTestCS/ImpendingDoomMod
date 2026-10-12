@@ -35,7 +35,7 @@ public final class ImpendingDoom {
         ModEffects.EFFECTS.register(modBus);
         ModGameRules.GAME_RULES.register(modBus);
 
-        container.registerConfig(ModConfig.Type.COMMON, DoomConfig.SPEC);
+        container.registerConfig(ModConfig.Type.STARTUP, DoomConfig.SPEC);
 
         modBus.addListener(NetworkHandler::register);
         modBus.addListener(ModEntities::registerAttributes);
