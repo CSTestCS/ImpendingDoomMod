@@ -55,6 +55,13 @@ public final class GearUtil {
         return new ItemStack(WEAPONS[random.nextInt(WEAPONS.length)]);
     }
 
+    /** Any weapon type, but nothing better than iron. */
+    public static ItemStack randomWeaponUpToIron(RandomSource random) {
+        Item[] weapons = {Items.WOODEN_SWORD, Items.STONE_SWORD, Items.IRON_SWORD, Items.WOODEN_AXE, Items.STONE_AXE, Items.IRON_AXE,
+                Items.GOLDEN_SWORD, Items.GOLDEN_AXE, Items.BOW, Items.CROSSBOW, Items.IRON_SPEAR, Items.STONE_SPEAR};
+        return new ItemStack(weapons[random.nextInt(weapons.length)]);
+    }
+
     public static ItemStack randomMeleeWeapon(RandomSource random) {
         Item[] melee = {Items.IRON_SWORD, Items.DIAMOND_SWORD, Items.IRON_AXE, Items.DIAMOND_AXE, Items.STONE_SWORD, Items.NETHERITE_SWORD};
         return new ItemStack(melee[random.nextInt(melee.length)]);

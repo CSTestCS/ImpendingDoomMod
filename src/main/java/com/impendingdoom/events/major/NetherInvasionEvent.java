@@ -107,38 +107,65 @@ public class NetherInvasionEvent extends DoomEvent {
         ListTag done = data.getListOrEmpty("rebuilt").copy();
         long key = new BlockPos(ruin.getX() >> 4, 0, ruin.getZ() >> 4).asLong();
         for (int i = 0; i < done.size(); i++) if (done.get(i) instanceof LongTag lt && lt.longValue() == key) return;
+
+        // Collect what is left of the frame.
+        List<BlockPos> frame = new ArrayList<>();
+        int surface = level.getHeight(Heightmap.Types.WORLD_SURFACE, ruin.getX(), ruin.getZ());
+        for (BlockPos p : BlockPos.betweenClosed(ruin.offset(-16, 0, -16).atY(surface - 24), ruin.offset(16, 0, 16).atY(surface + 24))) {
+            BlockState s = level.getBlockState(p);
+            if (s.is(Blocks.OBSIDIAN) || s.is(Blocks.CRYING_OBSIDIAN)) frame.add(p.immutable());
+        }
+        if (frame.size() < 4) return;
         done.add(LongTag.valueOf(key));
         data.put("rebuilt", done);
-
-        // Find the remains of the frame and rebuild a complete, lit portal there.
-        BlockPos base = null;
-        for (BlockPos p : BlockPos.betweenClosed(ruin.offset(-12, -10, -12), ruin.offset(12, 30, 12))) {
-            BlockState s = level.getBlockState(p);
-            if (s.is(Blocks.OBSIDIAN) || s.is(Blocks.CRYING_OBSIDIAN)) {
-                if (base == null || p.getY() < base.getY()) base = p.immutable();
-            }
-        }
-        if (base == null) base = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ruin);
-        buildPortal(level, base);
-        for (ServerPlayer p : level.players()) {
-            if (p.blockPosition().closerThan(base, 160)) {
-                p.sendSystemMessage(Component.translatable("message.impendingdoom.portal_rebuilt").withStyle(ChatFormatting.DARK_RED));
-            }
-        }
+        rebuildFrame(level, frame);
     }
 
-    private static void buildPortal(ServerLevel level, BlockPos origin) {
+    /**
+     * Rebuilds a ruined portal at the size and orientation of its remaining frame: the frame's plane is the most
+     * common X (or Z) coordinate among its blocks, and its outline is their bounding rectangle in that plane.
+     */
+    private static void rebuildFrame(ServerLevel level, List<BlockPos> frame) {
+        java.util.Map<Integer, Integer> byX = new java.util.HashMap<>();
+        java.util.Map<Integer, Integer> byZ = new java.util.HashMap<>();
+        for (BlockPos p : frame) {
+            byX.merge(p.getX(), 1, Integer::sum);
+            byZ.merge(p.getZ(), 1, Integer::sum);
+        }
+        var bestX = byX.entrySet().stream().max(java.util.Map.Entry.comparingByValue()).orElseThrow();
+        var bestZ = byZ.entrySet().stream().max(java.util.Map.Entry.comparingByValue()).orElseThrow();
+        // A portal in the X axis lies in a plane of constant Z.
+        boolean axisX = bestZ.getValue() >= bestX.getValue();
+        int plane = axisX ? bestZ.getKey() : bestX.getKey();
+        int minA = Integer.MAX_VALUE, maxA = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
+        for (BlockPos p : frame) {
+            if ((axisX ? p.getZ() : p.getX()) != plane) continue;
+            int a = axisX ? p.getX() : p.getZ();
+            minA = Math.min(minA, a);
+            maxA = Math.max(maxA, a);
+            minY = Math.min(minY, p.getY());
+            maxY = Math.max(maxY, p.getY());
+        }
+        if (minA == Integer.MAX_VALUE) return;
+        // Vanilla portals need at least a 2x3 opening, at most 21x21.
+        if (maxA - minA < 3) maxA = minA + 3;
+        if (maxY - minY < 4) maxY = minY + 4;
+        maxA = Math.min(maxA, minA + 22);
+        maxY = Math.min(maxY, minY + 22);
         BlockState obsidian = Blocks.OBSIDIAN.defaultBlockState();
-        BlockState portal = Blocks.NETHER_PORTAL.defaultBlockState().setValue(NetherPortalBlock.AXIS, Direction.Axis.X);
-        for (int x = 0; x < 4; x++) {
-            for (int y = 0; y < 5; y++) {
-                BlockPos p = origin.offset(x, y, 0);
-                boolean frame = x == 0 || x == 3 || y == 0 || y == 4;
-                level.setBlock(p, frame ? obsidian : Blocks.AIR.defaultBlockState(), 2);
+        BlockState portal = Blocks.NETHER_PORTAL.defaultBlockState().setValue(NetherPortalBlock.AXIS, axisX ? Direction.Axis.X : Direction.Axis.Z);
+        for (int a = minA; a <= maxA; a++) {
+            for (int y = minY; y <= maxY; y++) {
+                BlockPos p = axisX ? new BlockPos(a, y, plane) : new BlockPos(plane, y, a);
+                boolean edge = a == minA || a == maxA || y == minY || y == maxY;
+                if (edge) level.setBlock(p, obsidian, 2);
             }
         }
-        for (int x = 1; x < 3; x++) {
-            for (int y = 1; y < 4; y++) level.setBlock(origin.offset(x, y, 0), portal, 18);
+        for (int a = minA + 1; a < maxA; a++) {
+            for (int y = minY + 1; y < maxY; y++) {
+                BlockPos p = axisX ? new BlockPos(a, y, plane) : new BlockPos(plane, y, a);
+                level.setBlock(p, portal, 18);
+            }
         }
     }
 
@@ -156,7 +183,10 @@ public class NetherInvasionEvent extends DoomEvent {
                     // Purely cosmetic: rendered by GhastHarnessLayer, never dropped.
                     GearUtil.equip(ghast, EquipmentSlot.BODY, new ItemStack(Items.HARNESS.red()), 0.0F);
                     AbstractPiglin rider = piglin(level, pos, r, false);
-                    if (rider != null) rider.startRiding(ghast, true, true);
+                    if (rider != null) {
+                        armRider(rider, r);
+                        rider.startRiding(ghast, true, true);
+                    }
                 }
             } else if (roll < 5) {
                 Entity h = EventUtil.spawn(level, EntityTypes.HOGLIN, pos);
@@ -164,12 +194,22 @@ public class NetherInvasionEvent extends DoomEvent {
                     invader(hoglin);
                     hoglin.setImmuneToZombification(true);
                     AbstractPiglin rider = piglin(level, pos, r, false);
-                    if (rider != null) rider.startRiding(hoglin, true, true);
+                    if (rider != null) {
+                        armRider(rider, r);
+                        rider.startRiding(hoglin, true, true);
+                    }
                 }
             } else {
                 piglin(level, pos, r, roll < 9);
             }
         }
+    }
+
+    /** Mounted invaders fight with spears, crossbows or bows. */
+    private static void armRider(AbstractPiglin rider, RandomSource r) {
+        ItemStack[] weapons = {new ItemStack(Items.GOLDEN_SPEAR), new ItemStack(Items.NETHERITE_SPEAR), new ItemStack(Items.CROSSBOW), new ItemStack(Items.BOW)};
+        GearUtil.equip(rider, EquipmentSlot.MAINHAND, weapons[r.nextInt(weapons.length)], 0.085F);
+        rider.getPersistentData().putBoolean("impendingdoom_thrower", false);
     }
 
     private static AbstractPiglin piglin(ServerLevel level, BlockPos pos, RandomSource r, boolean brute) {

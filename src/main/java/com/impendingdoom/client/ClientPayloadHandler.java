@@ -12,14 +12,22 @@ public final class ClientPayloadHandler {
 
     public static void handleState(DoomStatePayload payload) {
         boolean wasFall = ActiveEvents.clientActive(FallEvent.ID);
-        ActiveEvents.setClient(payload.minor(), payload.major());
+        ActiveEvents.setClient(payload.minor(), payload.major(), payload.season());
+        ClientDoomState.blizzard = (payload.flags() & DoomStatePayload.BLIZZARD) != 0;
         ClientDoomState.thirst = payload.thirst();
         ClientDoomState.quake = payload.quake();
         boolean isFall = ActiveEvents.clientActive(FallEvent.ID);
-        if (wasFall != isFall && Minecraft.getInstance().levelRenderer != null) {
-            // Leaf tint changed: rebuild chunk meshes.
-            Minecraft.getInstance().levelRenderer.resetLevelRenderData();
-        }
+        if (wasFall != isFall) redrawNearbyChunks();
+    }
+
+    /** Leaf tints changed: re-mesh the sections around the player. */
+    private static void redrawNearbyChunks() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
+        int r = mc.options.getEffectiveRenderDistance() + 1;
+        int sx = mc.player.getBlockX() >> 4;
+        int sz = mc.player.getBlockZ() >> 4;
+        mc.level.setSectionRangeDirty(sx - r, mc.level.getMinSectionY(), sz - r, sx + r, mc.level.getMaxSectionY(), sz + r);
     }
 
     public static void handleMark(EntityMarkPayload payload) {

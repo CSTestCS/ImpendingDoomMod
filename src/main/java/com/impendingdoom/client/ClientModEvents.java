@@ -64,8 +64,9 @@ public final class ClientModEvents {
     public static void addLayers(EntityRenderersEvent.AddLayers event) {
         for (EntityType<?> type : event.getEntityTypes()) {
             EntityRenderer<?, ?> renderer = event.getRenderer(type);
-            if (renderer instanceof LivingEntityRenderer living && !rendersArmor(living)) {
-                living.addLayer(new RefitArmorLayer(living, event.getContext()));
+            if (renderer instanceof LivingEntityRenderer living) {
+                if (!rendersArmor(living)) living.addLayer(new RefitArmorLayer(living, event.getContext()));
+                living.addLayer(new ChargedGlintLayer(living));
             }
         }
         // Invading ghasts wear happy ghast harnesses (visual only).
@@ -108,6 +109,7 @@ public final class ClientModEvents {
             }
             int flags = ClientDoomState.MARKS.getOrDefault(entity.getId(), 0);
             state.setRenderData(ArmorRenderData.SHAKING, (flags & EntityMarkPayload.SHAKING) != 0 ? Boolean.TRUE : null);
+            state.setRenderData(ArmorRenderData.CHARGED, (flags & EntityMarkPayload.CHARGED) != 0 ? Boolean.TRUE : null);
         });
     }
 

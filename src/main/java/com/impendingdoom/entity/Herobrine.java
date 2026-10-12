@@ -250,6 +250,10 @@ public class Herobrine extends PathfinderMob {
             BlockPos pos = EventUtil.surfacePos(level, watched.blockPosition(), 4, 10, getRandom());
             if (pos == null) continue;
             var mob = EventUtil.spawn(level, types[getRandom().nextInt(types.length)], pos);
+            if (mob instanceof net.minecraft.world.entity.monster.creaking.Creaking creaking
+                    && com.impendingdoom.util.CreakingCompanions.heartOf(level, creaking) == null) {
+                com.impendingdoom.util.CreakingCompanions.attach(level, creaking);
+            }
             if (mob instanceof Mob m) m.setTarget(watched);
             level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 20, 0.3, 0.6, 0.3, 0.02);
         }

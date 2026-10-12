@@ -25,7 +25,7 @@ public final class ClientEvents {
     private ClientEvents() {}
 
     private static boolean blizzard(ClientLevel level) {
-        return ActiveEvents.clientActive(WinterEvent.ID) && level.getThunderLevel(1.0F) > 0.5F;
+        return ActiveEvents.clientActive(WinterEvent.ID) && ClientDoomState.blizzard;
     }
 
     @SubscribeEvent
@@ -70,14 +70,17 @@ public final class ClientEvents {
         float q = ClientDoomState.quake;
         if (q <= 0) return;
         float t = (float) (Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime() + event.getPartialTick());
-        event.setPitch(event.getPitch() + Mth.sin(t * 2.1F) * 0.9F * q);
-        event.setYaw(event.getYaw() + Mth.cos(t * 1.7F) * 0.7F * q);
-        event.setRoll(event.getRoll() + Mth.sin(t * 2.9F) * 0.6F * q);
+        // Strong vertical jolting, lighter side-to-side sway.
+        event.setPitch(event.getPitch() + (Mth.sin(t * 3.7F) * 2.6F + Mth.sin(t * 9.3F) * 1.2F) * q);
+        event.setYaw(event.getYaw() + Mth.cos(t * 1.7F) * 0.8F * q);
+        event.setRoll(event.getRoll() + Mth.sin(t * 2.9F) * 1.0F * q);
     }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Hallucinations.tick();
+        ClientLevel level = Minecraft.getInstance().level;
+        ActiveEvents.clientInOverworld = level != null && level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
     }
 
     @SubscribeEvent
@@ -91,7 +94,7 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        ActiveEvents.setClient("", "");
+        ActiveEvents.setClient("", "", "");
         ClientDoomState.reset();
     }
 }

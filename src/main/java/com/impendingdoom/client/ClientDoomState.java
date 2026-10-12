@@ -7,6 +7,7 @@ import java.util.Map;
 public final class ClientDoomState {
     public static int thirst = 20;
     public static float quake;
+    public static boolean blizzard;
     /** entity id -> mark flags (see EntityMarkPayload) */
     public static final Map<Integer, Integer> MARKS = new HashMap<>();
 
@@ -15,6 +16,7 @@ public final class ClientDoomState {
     public static void reset() {
         thirst = 20;
         quake = 0;
+        blizzard = false;
         MARKS.clear();
     }
 }

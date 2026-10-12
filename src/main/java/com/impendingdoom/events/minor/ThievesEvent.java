@@ -15,6 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -61,6 +63,9 @@ public class ThievesEvent extends DoomEvent {
         thief.addTag(TAG);
         thief.setCustomName(Component.translatable("entity.impendingdoom.thief"));
         thief.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        // Thieves take any drop without a second thought and never get hurt by falling.
+        EventUtil.addModifier(thief, Attributes.SAFE_FALL_DISTANCE, "thief_safe_fall", 256.0, AttributeModifier.Operation.ADD_VALUE);
+        EventUtil.addModifier(thief, Attributes.FALL_DAMAGE_MULTIPLIER, "thief_fall_damage", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
         setupGoals(thief);
     }
 
@@ -83,6 +88,11 @@ public class ThievesEvent extends DoomEvent {
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !event.loadedFromDisk()) return;
         if (event.getEntity() instanceof Vindicator v && v.entityTags().contains(TAG)) setupGoals(v);
+    }
+
+    @SubscribeEvent
+    public static void onFall(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+        if (event.getEntity().entityTags().contains(TAG) && event.getSource().is(net.minecraft.tags.DamageTypeTags.IS_FALL)) event.setCanceled(true);
     }
 
     @SubscribeEvent

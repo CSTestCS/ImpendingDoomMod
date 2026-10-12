@@ -19,7 +19,7 @@ public final class ModEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<TornadoEntity>> TORNADO = ENTITY_TYPES.register("tornado",
             id -> EntityType.Builder.<TornadoEntity>of(TornadoEntity::new, MobCategory.MISC)
-                    .sized(6.0F, 24.0F).clientTrackingRange(16).updateInterval(2).fireImmune()
+                    .sized(10.0F, 50.0F).clientTrackingRange(16).updateInterval(2).fireImmune()
                     .build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MeteorEntity>> METEOR = ENTITY_TYPES.register("meteor",

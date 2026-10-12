@@ -4,7 +4,9 @@
   "package": "com.impendingdoom.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BiomeMixin"
+    "BiomeMixin",
+    "InventoryMenuMixin",
+    "EnvironmentAttributeSystemMixin"
   ],
   "client": [],
   "injectors": {

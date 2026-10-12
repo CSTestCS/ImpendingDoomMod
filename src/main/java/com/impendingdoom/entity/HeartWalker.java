@@ -42,6 +42,7 @@ public class HeartWalker extends PathfinderMob {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Player.class, 14.0F, 1.1, 1.5));
         goalSelector.addGoal(2, new HideGoal(this));
+        goalSelector.addGoal(3, new StayNearCreakingGoal(this));
         goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
         goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
@@ -58,6 +59,37 @@ public class HeartWalker extends PathfinderMob {
     @Override
     public boolean removeWhenFarAway(double distance) {
         return false;
+    }
+
+    /** Keeps the heart within reach of its creaking when no player is close. */
+    static class StayNearCreakingGoal extends Goal {
+        private final HeartWalker mob;
+        private net.minecraft.world.entity.Entity creaking;
+
+        StayNearCreakingGoal(HeartWalker mob) {
+            this.mob = mob;
+            setFlags(EnumSet.of(Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            if (!(mob.level() instanceof ServerLevel level) || mob.tickCount % 20 != 0) return false;
+            java.util.UUID id = com.impendingdoom.util.EventUtil.uuid(mob.getPersistentData(), CreakingCompanions.CREAKING_KEY);
+            creaking = id == null ? null : level.getEntity(id);
+            if (creaking == null || !creaking.isAlive() || mob.distanceToSqr(creaking) < 10 * 10) return false;
+            Player near = level.getNearestPlayer(mob, 10.0);
+            return near == null || near.isSpectator() || near.isCreative();
+        }
+
+        @Override
+        public void start() {
+            mob.getNavigation().moveTo(creaking, 1.1);
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return !mob.getNavigation().isDone() && creaking != null && creaking.isAlive() && mob.distanceToSqr(creaking) > 6 * 6;
+        }
     }
 
     /** Moves to a spot out of the nearest player's line of sight. */

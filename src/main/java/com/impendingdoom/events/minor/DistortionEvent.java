@@ -92,7 +92,6 @@ public class DistortionEvent extends DoomEvent {
         player.setItemSlot(slot, ItemStack.EMPTY);
         if (!player.getInventory().add(warpedStack)) EventUtil.dropNear(player, warpedStack);
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 0.8F);
-        player.sendSystemMessage(Component.translatable("message.impendingdoom.armor_warped", warpedStack.getHoverName()).withStyle(ChatFormatting.DARK_PURPLE), true);
     }
 
     /** Warped is removed when the item is repaired (anvil, crafting, mending...). */
@@ -122,7 +121,6 @@ public class DistortionEvent extends DoomEvent {
             if (!isWarped(player, worn)) return;
             player.setItemSlot(slot, ItemStack.EMPTY);
             if (!player.getInventory().add(worn)) EventUtil.dropNear(player, worn);
-            player.sendSystemMessage(Component.translatable("message.impendingdoom.armor_unwearable").withStyle(ChatFormatting.DARK_PURPLE), true);
         });
     }
 }

@@ -45,7 +45,6 @@ public class TornadoEvent extends DoomEvent {
         tornado.setTarget(target);
         level.addFreshEntity(tornado);
         data.putString("tornado", tornado.getUUID().toString());
-        target.sendSystemMessage(Component.translatable("message.impendingdoom.tornado_tracking").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
     }
 
     @Override

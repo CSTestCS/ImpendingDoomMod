@@ -52,18 +52,21 @@ public class WinterEvent extends DoomEvent {
 
     @Override
     public void onTick(ServerLevel level, CompoundTag data) {
-        // It always snows ("clear" weather); every other weather is a blizzard (thunder state).
+        // Winter runs its own weather: light snow where it would be clear, a blizzard wherever it would rain or storm.
+        // Blizzards follow vanilla rain timing (half a day to a full day).
         int timer = data.getIntOr("weatherTimer", 0) - 1;
         boolean blizzard = data.getBooleanOr("blizzard", false);
         if (timer <= 0) {
-            blizzard = !blizzard && level.getRandom().nextInt(3) == 0;
-            timer = blizzard ? 6000 + level.getRandom().nextInt(6000) : 12000 + level.getRandom().nextInt(12000);
+            blizzard = !blizzard;
+            timer = blizzard ? 12000 + level.getRandom().nextInt(12000) : 12000 + level.getRandom().nextInt(24000);
             data.putBoolean("blizzard", blizzard);
-            EventUtil.setWeather(level, (blizzard ? "thunder" : "rain"), timer + 200);
-        } else if (!level.isRaining() || level.isThundering() != blizzard) {
-            EventUtil.setWeather(level, (blizzard ? "thunder" : "rain"), timer + 200);
         }
         data.putInt("weatherTimer", timer);
+        // Only correct the weather when its actual state differs (the rain/thunder *levels* fade in slowly).
+        var weather = level.getWeatherData();
+        if (!weather.isRaining() || weather.isThundering() != blizzard) {
+            EventUtil.setWeather(level, blizzard ? "thunder" : "rain", Math.max(timer, 600) + 200);
+        }
         long time = level.getGameTime();
         RandomSource r = level.getRandom();
         for (ServerPlayer player : level.players()) {
@@ -153,6 +156,17 @@ public class WinterEvent extends DoomEvent {
             }
         }
         return false;
+    }
+
+    /** True while a blizzard is blowing (synced to clients for fog). */
+    public static boolean blizzard() {
+        return EventScheduler.isActive(ID) && EventScheduler.eventData(ID).getBooleanOr("blizzard", false);
+    }
+
+    @Override
+    public void onStart(ServerLevel level, CompoundTag data) {
+        data.putBoolean("blizzard", level.getRandom().nextBoolean());
+        data.putInt("weatherTimer", 6000 + level.getRandom().nextInt(12000));
     }
 
     @Override

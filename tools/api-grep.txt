@@ -1,5 +1,6 @@
-C:net.minecraft.client.multiplayer.ClientLevel|setSectionRangeDirty|setSectionDirty
-C:net.minecraft.world.level.Level|updateSkyBrightness|getSkyDarken|isDarkOutside|invoke|getfield|putfield
-net.minecraft.world.entity.monster.Monster|isDarkEnough|SpawnRules
-C:net.minecraft.world.entity.Mob|isSunBurnTick
-net.minecraft.world.entity.ambient.Bat|public
+C:net.minecraft.client.renderer.entity.layers.EnergySwirlLayer|submitModel|invoke|getstatic
+net.minecraft.sounds.SoundEvents|CREAKING_|BREEZE_WIND|RAVAGER_STUNNED|BAT_HURT
+net.minecraft.world.level.Level|addAlwaysVisibleParticle|addParticle
+net.minecraft.world.level.LevelHeightAccessor|Section
+net.minecraft.world.item.Items|SPEAR
+net.minecraft.world.damagesource.DamageSources|flyIntoWall|explosion

@@ -109,12 +109,8 @@ public class SummerEvent extends DoomEvent {
             }
             player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 200, 1));
             player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160, 0));
-            player.sendSystemMessage(Component.translatable("message.impendingdoom.overheated").withStyle(ChatFormatting.RED), true);
             level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.8F, 0.6F);
             heat = MAX_HEAT / 2;
-        } else if (heavy > 0 && day && heat > MAX_HEAT * 0.6 && player.tickCount % 40 == 0) {
-            int pct = heat * 100 / MAX_HEAT;
-            player.sendSystemMessage(Component.translatable("message.impendingdoom.heat", pct).withStyle(ChatFormatting.GOLD), true);
         }
         tag.putInt(HEAT, heat);
     }

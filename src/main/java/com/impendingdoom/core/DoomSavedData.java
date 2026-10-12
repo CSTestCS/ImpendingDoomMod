@@ -23,12 +23,15 @@ public final class DoomSavedData extends SavedData {
 
     public String currentMinor = "";
     public String currentMajor = "";
+    /** The active season. Seasons persist through other major events until the next season begins. */
+    public String currentSeason = "";
     public String nextEvent = "";
     public String lastMinor = "";
     public String lastMajor = "";
 
     public CompoundTag minorData = new CompoundTag();
     public CompoundTag majorData = new CompoundTag();
+    public CompoundTag seasonData = new CompoundTag();
     /** Persistent hunter groups for the Hunted event, keyed by player UUID. */
     public CompoundTag hunters = new CompoundTag();
 
@@ -55,6 +58,13 @@ public final class DoomSavedData extends SavedData {
         d.minorData = tag.getCompoundOrEmpty("minorData").copy();
         d.majorData = tag.getCompoundOrEmpty("majorData").copy();
         d.hunters = tag.getCompoundOrEmpty("hunters").copy();
+        d.currentSeason = tag.getStringOr("currentSeason", "");
+        d.seasonData = tag.getCompoundOrEmpty("seasonData").copy();
+        // Worlds from before seasons had their own layer stored the season as the major event.
+        if (d.currentSeason.isEmpty() && EventRegistry.SEASONS.contains(d.currentMajor)) {
+            d.currentSeason = d.currentMajor;
+            d.seasonData = d.majorData;
+        }
         return d;
     }
 
@@ -75,6 +85,8 @@ public final class DoomSavedData extends SavedData {
         tag.put("minorData", minorData.copy());
         tag.put("majorData", majorData.copy());
         tag.put("hunters", hunters.copy());
+        tag.putString("currentSeason", currentSeason);
+        tag.put("seasonData", seasonData.copy());
         return tag;
     }
 

@@ -57,6 +57,6 @@ public final class ImpendingDoom {
         event.modifyMatching((item, components) -> {
             Identifier key = BuiltInRegistries.ITEM.getKey(item);
             return key.getNamespace().equals("minecraft") && key.getPath().endsWith("_wool");
-        }, (builder, lookup, item) -> builder.set(DataComponents.EQUIPPABLE, Equippable.builder(EquipmentSlot.HEAD).build()));
+        }, (builder, lookup, item) -> builder.set(DataComponents.EQUIPPABLE, Equippable.builder(EquipmentSlot.HEAD).setSwappable(false).setDispensable(false).build()));
     }
 }

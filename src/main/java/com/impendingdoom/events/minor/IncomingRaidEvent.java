@@ -83,8 +83,6 @@ public class IncomingRaidEvent extends DoomEvent {
             raids.add(raid);
         }
         data.put("raids", raids);
-        level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("message.impendingdoom.raid_incoming")
-                .withStyle(ChatFormatting.RED), false);
     }
 
     @Override
@@ -212,7 +210,6 @@ public class IncomingRaidEvent extends DoomEvent {
         for (ServerPlayer p : near) {
             p.addEffect(new MobEffectInstance(MobEffects.HERO_OF_THE_VILLAGE, 48000, level.getDifficulty() == Difficulty.HARD ? 2 : 0));
             EventUtil.notifySound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.0F, 1.0F);
-            p.sendSystemMessage(Component.translatable("message.impendingdoom.raid_victory").withStyle(ChatFormatting.GREEN));
         }
         EventUtil.defer(() -> {
             bar.removeAllPlayers();

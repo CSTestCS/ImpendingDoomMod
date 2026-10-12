@@ -7,13 +7,16 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** Event state the client needs for visuals: fog, sky tint, leaf colors, earthquake shake, thirst HUD. */
-public record DoomStatePayload(String minor, String major, int thirst, float quake) implements CustomPacketPayload {
+public record DoomStatePayload(String minor, String major, String season, int thirst, float quake, int flags) implements CustomPacketPayload {
+    public static final int BLIZZARD = 1;
     public static final Type<DoomStatePayload> TYPE = new Type<>(ImpendingDoom.id("state"));
     public static final StreamCodec<ByteBuf, DoomStatePayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, DoomStatePayload::minor,
             ByteBufCodecs.STRING_UTF8, DoomStatePayload::major,
+            ByteBufCodecs.STRING_UTF8, DoomStatePayload::season,
             ByteBufCodecs.VAR_INT, DoomStatePayload::thirst,
             ByteBufCodecs.FLOAT, DoomStatePayload::quake,
+            ByteBufCodecs.VAR_INT, DoomStatePayload::flags,
             DoomStatePayload::new);
 
     @Override

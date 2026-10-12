@@ -22,7 +22,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * /impendingdoom status                   - show current/next events
  * /impendingdoom list                     - list all events
  * /impendingdoom trigger [event]          - start the next (or given) event right now
- * /impendingdoom foretell &lt;event&gt;   - change the foretold next event (re-issues omens)
+ * /impendingdoom next &lt;event&gt;       - choose the next event (re-issues omens); "foretell" is an alias
  * /impendingdoom end minor|major          - end the running event
  * /impendingdoom days &lt;n&gt;           - same as /gamerule impendingdoom:days_between_events
  * /impendingdoom minors &lt;n&gt;         - same as /gamerule impendingdoom:minor_events_before_major
@@ -45,6 +45,10 @@ public final class DoomCommands {
                         .then(Commands.argument("event", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
                                 .executes(ctx -> trigger(ctx, StringArgumentType.getString(ctx, "event")))))
+                .then(Commands.literal("next").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("event", StringArgumentType.word())
+                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
+                                .executes(DoomCommands::foretell)))
                 .then(Commands.literal("foretell").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("event", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
@@ -85,6 +89,7 @@ public final class DoomCommands {
                 + " minor events before a major event"), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Minor event: ").append(name(d.currentMinor)), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Major event: ").append(name(d.currentMajor)), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Season: ").append(name(d.currentSeason)), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Next: ").append(name(d.nextEvent))
                 .append(Component.literal(" on day " + (next + 1) + " (in " + Math.max(0, next - day) + " days)")), false);
         return 1;
@@ -114,7 +119,8 @@ public final class DoomCommands {
         DoomSavedData d = data();
         DoomEvent e = EventRegistry.get(StringArgumentType.getString(ctx, "event"));
         if (e == null) throw UNKNOWN.create();
-        EventScheduler.setNext(ctx.getSource().getServer().overworld(), d, e, true);
+        EventScheduler.setNext(ctx.getSource().getServer().overworld(), d, e);
+        ctx.getSource().sendSuccess(() -> Component.literal("Next event: ").append(e.displayName()), true);
         return 1;
     }
 
@@ -125,7 +131,7 @@ public final class DoomCommands {
             EventScheduler.endMajor(level, d);
             EventScheduler.syncAll(level, d);
         } else {
-            EventScheduler.endMinor(level, d, true);
+            EventScheduler.endMinor(level, d);
         }
         return 1;
     }

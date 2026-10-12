@@ -145,6 +145,23 @@ def burnt_lantern(name, glass):
     png(f"{OUT}/block/{name}.png", 16, 16, img)
 
 
+def charged_glint():
+    """Light blue glint streaks on black (rendered additively, so black is invisible)."""
+    r = random.Random(6)
+    img = canvas(64, 64, (0, 0, 0, 255))
+    for _ in range(14):
+        offset = r.randint(0, 63)
+        width = r.randint(2, 5)
+        strength = r.uniform(0.35, 1.0)
+        for y in range(64):
+            for w in range(width):
+                x = (offset + y + w) % 64
+                fade = strength * (1.0 - abs(w - width / 2) / (width / 2 + 0.5))
+                c = img[y][x]
+                img[y][x] = (min(255, c[0] + int(70 * fade)), min(255, c[1] + int(190 * fade)), min(255, c[2] + int(255 * fade)), 255)
+    png(f"{OUT}/entity/charged_glint.png", 64, 64, img)
+
+
 def effect(name, color, symbol):
     img = canvas(18, 18)
     for y in range(18):
@@ -163,6 +180,7 @@ if __name__ == "__main__":
     heart_walker()
     omen()
     netherflame()
+    charged_glint()
     burnt_torch("burnt_torch", (40, 32, 28, 255))
     burnt_torch("burnt_soul_torch", (30, 40, 44, 255))
     burnt_lantern("burnt_lantern", (40, 34, 26, 255))

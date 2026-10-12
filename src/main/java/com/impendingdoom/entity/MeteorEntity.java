@@ -31,10 +31,16 @@ import java.util.List;
 /** A falling end stone meteor. On impact it blasts a crater and leaves an end stone boulder with an ore core. */
 public class MeteorEntity extends Entity {
     private int life;
+    /** Small meteors are single blocks: they never damage terrain, only nearby entities. */
+    private boolean small;
 
     public MeteorEntity(EntityType<? extends MeteorEntity> type, Level level) {
         super(type, level);
         this.noPhysics = true;
+    }
+
+    public void setSmall(boolean small) {
+        this.small = small;
     }
 
     @Override
@@ -44,11 +50,13 @@ public class MeteorEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         life = input.getIntOr("Life", 0);
+        small = input.getBooleanOr("Small", false);
     }
 
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         output.putInt("Life", life);
+        output.putBoolean("Small", small);
     }
 
     @Override
@@ -72,10 +80,16 @@ public class MeteorEntity extends Entity {
                 discard();
                 return;
             }
-            level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 12, 0.8, 0.8, 0.8, 0.02);
-            level.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1, getZ(), 6, 0.6, 0.6, 0.6, 0.01);
-            level.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1, getZ(), 2, 0.5, 0.5, 0.5, 0.05);
-            if (life % 20 == 0) level.playSound(null, getX(), getY(), getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.WEATHER, 6.0F, 0.3F);
+            if (small) {
+                level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 0.5, getZ(), 3, 0.15, 0.15, 0.15, 0.01);
+                level.sendParticles(ParticleTypes.SMOKE, getX(), getY() + 0.5, getZ(), 2, 0.1, 0.1, 0.1, 0.01);
+                level.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 0.5, getZ(), 1, 0.05, 0.05, 0.05, 0.0);
+            } else {
+                level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 12, 0.8, 0.8, 0.8, 0.02);
+                level.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1, getZ(), 6, 0.6, 0.6, 0.6, 0.01);
+                level.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1, getZ(), 2, 0.5, 0.5, 0.5, 0.05);
+                if (life % 20 == 0) level.playSound(null, getX(), getY(), getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.WEATHER, 6.0F, 0.3F);
+            }
             BlockHitResult hit = level.clip(new ClipContext(pos, next.add(motion.normalize().scale(1.5)), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, this));
             if (hit.getType() == HitResult.Type.BLOCK) {
                 impact(level, hit.getLocation());
@@ -86,6 +100,10 @@ public class MeteorEntity extends Entity {
     }
 
     private void impact(ServerLevel level, Vec3 at) {
+        if (small) {
+            smallImpact(level, at);
+            return;
+        }
         level.explode(this, at.x, at.y, at.z, 5.0F, true,
                 EventUtil.canDestroyBlocks(level) ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.NONE);
         BlockPos center = BlockPos.containing(at).below(2);
@@ -109,6 +127,22 @@ public class MeteorEntity extends Entity {
         // There is always at least one valuable ore at the heart of a meteor.
         level.setBlockAndUpdate(center, Blocks.DIAMOND_ORE.defaultBlockState());
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, at.x, at.y, at.z, 2, 1, 1, 1, 0);
+        discard();
+    }
+
+    private void smallImpact(ServerLevel level, Vec3 at) {
+        for (net.minecraft.world.entity.LivingEntity e : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                new net.minecraft.world.phys.AABB(at, at).inflate(2.5))) {
+            e.hurtServer(level, level.damageSources().explosion(this, null), 5.0F);
+            e.igniteForSeconds(3.0F);
+        }
+        level.sendParticles(ParticleTypes.EXPLOSION, at.x, at.y + 0.3, at.z, 1, 0, 0, 0, 0);
+        level.sendParticles(ParticleTypes.LAVA, at.x, at.y + 0.3, at.z, 6, 0.3, 0.2, 0.3, 0.0);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.WEATHER, 1.2F, 1.6F);
+        BlockPos pos = BlockPos.containing(at);
+        if (level.getRandom().nextInt(10) == 0 && level.getBlockState(pos).canBeReplaced() && level.getBlockState(pos).getFluidState().isEmpty()) {
+            level.setBlockAndUpdate(pos, Blocks.END_STONE.defaultBlockState());
+        }
         discard();
     }
 }

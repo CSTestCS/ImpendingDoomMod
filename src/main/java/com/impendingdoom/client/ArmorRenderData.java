@@ -10,6 +10,8 @@ public final class ArmorRenderData {
     public static final ContextKey<ItemStack[]> ARMOR = new ContextKey<>(ImpendingDoom.id("refit_armor"));
     /** Harness worn by a regular ghast (purely visual, Nether Invasion). */
     public static final ContextKey<ItemStack> HARNESS = new ContextKey<>(ImpendingDoom.id("ghast_harness"));
+    /** True while the entity is charged (Electrical Storm). */
+    public static final ContextKey<Boolean> CHARGED = new ContextKey<>(ImpendingDoom.id("charged"));
     /** True while the entity should shake (bloodlust haze). */
     public static final ContextKey<Boolean> SHAKING = new ContextKey<>(ImpendingDoom.id("shaking"));
 

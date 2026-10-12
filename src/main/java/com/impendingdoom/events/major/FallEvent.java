@@ -67,20 +67,10 @@ public class FallEvent extends DoomEvent {
         if (time % 10 == 0) {
             for (ServerPlayer player : level.players()) shedLeaves(level, player.blockPosition(), r);
         }
-        if (time % 600 == 0) {
+        // Large groups of tiny spiders, day and night, every minute or so per player.
+        if (time % 1200 == 0) {
             for (ServerPlayer player : EventUtil.targets(level)) {
-                if (r.nextInt(4) != 0) continue;
-                boolean swarm = r.nextInt(4) == 0;
-                int count = swarm ? 8 + r.nextInt(7) : 2 + r.nextInt(2);
-                BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 16, 32, r);
-                if (origin == null) continue;
-                for (int i = 0; i < count; i++) {
-                    BlockPos pos = EventUtil.surfacePos(level, origin, 0, 3, r);
-                    if (EventUtil.spawn(level, EntityTypes.SPIDER, pos == null ? origin : pos) instanceof Spider spider) {
-                        makeTiny(spider);
-                        if (swarm) spider.setTarget(player);
-                    }
-                }
+                if (r.nextInt(3) != 0) spawnTinyGroup(level, player, 8 + r.nextInt(9), r.nextBoolean());
             }
         }
     }
@@ -130,9 +120,28 @@ public class FallEvent extends DoomEvent {
         creeper.goalSelector.removeAllGoals(g -> g instanceof SwellGoal);
     }
 
+    /** A large horde of tiny spiders that comes straight for the player. */
+    public static void spawnTinySpiderHorde(ServerLevel level, ServerPlayer player) {
+        spawnTinyGroup(level, player, 14 + level.getRandom().nextInt(10), true);
+    }
+
+    private static void spawnTinyGroup(ServerLevel level, ServerPlayer player, int count, boolean attack) {
+        RandomSource r = level.getRandom();
+        BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 16, 32, r);
+        if (origin == null) return;
+        for (int i = 0; i < count; i++) {
+            BlockPos pos = EventUtil.surfacePos(level, origin, 0, 3, r);
+            if (EventUtil.spawn(level, EntityTypes.SPIDER, pos == null ? origin : pos) instanceof Spider spider) {
+                makeTiny(spider);
+                spider.setPersistenceRequired();
+                if (attack) spider.setTarget(player);
+            }
+        }
+    }
+
     private static void makeTiny(Spider spider) {
         spider.addTag(TINY);
-        EventUtil.addModifier(spider, Attributes.SCALE, "tiny_scale", -0.65, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        EventUtil.addModifier(spider, Attributes.SCALE, "tiny_scale", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         EventUtil.addModifier(spider, Attributes.MAX_HEALTH, "tiny_health", -0.7, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         EventUtil.addModifier(spider, Attributes.MOVEMENT_SPEED, "tiny_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         spider.setHealth(spider.getMaxHealth());
@@ -183,10 +192,11 @@ public class FallEvent extends DoomEvent {
     public static void onFinalize(FinalizeSpawnEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !EventScheduler.isActive(ID)) return;
         if (!(event.getEntity() instanceof AbstractSkeleton skeleton) || event.getSpawnType() != EntitySpawnReason.NATURAL) return;
+        if (!com.impendingdoom.core.DayClock.isNight(level)) return;
         RandomSource r = level.getRandom();
         EventUtil.defer(() -> {
-            GearUtil.equipArmor(skeleton, r, 0, 5, 0.6F);
-            GearUtil.equip(skeleton, EquipmentSlot.MAINHAND, GearUtil.randomWeapon(r), 0.085F);
+            GearUtil.equipArmor(skeleton, r, 0, 3, 0.6F);
+            GearUtil.equip(skeleton, EquipmentSlot.MAINHAND, GearUtil.randomWeaponUpToIron(r), 0.085F);
             skeleton.reassessWeaponGoal();
             // More skeletons
             if (r.nextBoolean()) {
@@ -194,8 +204,8 @@ public class FallEvent extends DoomEvent {
                 if (pos != null) {
                     Mob extra = EventUtil.spawn(level, EntityTypes.SKELETON, pos);
                     if (extra instanceof AbstractSkeleton s) {
-                        GearUtil.equipArmor(s, r, 0, 5, 0.6F);
-                        GearUtil.equip(s, EquipmentSlot.MAINHAND, GearUtil.randomWeapon(r), 0.085F);
+                        GearUtil.equipArmor(s, r, 0, 3, 0.6F);
+                        GearUtil.equip(s, EquipmentSlot.MAINHAND, GearUtil.randomWeaponUpToIron(r), 0.085F);
                         s.reassessWeaponGoal();
                     }
                 }
@@ -206,5 +216,8 @@ public class FallEvent extends DoomEvent {
     @Override
     public void onEnd(ServerLevel level, CompoundTag data) {
         // Fallen leaves stay as decoration; leaf piles stop spawning once Fall ends (see leafPileSpawn).
+        for (Spider spider : level.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(Spider.class), sp -> sp.entityTags().contains(TINY))) {
+            spider.discard();
+        }
     }
 }

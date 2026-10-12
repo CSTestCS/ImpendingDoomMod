@@ -158,7 +158,6 @@ public class BloodMoonEvent extends DoomEvent {
         if (!EventScheduler.isActive(ID)) return;
         if (!event.getEntity().getItemBySlot(EquipmentSlot.HEAD).is(ItemTags.WOOL)) {
             event.setProblem(Player.BedSleepingProblem.OTHER_PROBLEM);
-            event.getEntity().sendSystemMessage(Component.translatable("message.impendingdoom.blood_moon_sleep").withStyle(ChatFormatting.DARK_RED), true);
         }
     }
 

@@ -13,25 +13,29 @@ public final class ActiveEvents {
     private static volatile String serverMajor = "";
     private static volatile String clientMinor = "";
     private static volatile String clientMajor = "";
+    private static volatile String serverSeason = "";
+    private static volatile String clientSeason = "";
 
     private ActiveEvents() {}
 
-    public static void setServer(String minor, String major) {
+    public static void setServer(String minor, String major, String season) {
         serverMinor = minor == null ? "" : minor;
         serverMajor = major == null ? "" : major;
+        serverSeason = season == null ? "" : season;
     }
 
-    public static void setClient(String minor, String major) {
+    public static void setClient(String minor, String major, String season) {
         clientMinor = minor == null ? "" : minor;
         clientMajor = major == null ? "" : major;
+        clientSeason = season == null ? "" : season;
     }
 
     public static boolean serverActive(String id) {
-        return id.equals(serverMinor) || id.equals(serverMajor);
+        return id.equals(serverMinor) || id.equals(serverMajor) || id.equals(serverSeason);
     }
 
     public static boolean clientActive(String id) {
-        return id.equals(clientMinor) || id.equals(clientMajor);
+        return id.equals(clientMinor) || id.equals(clientMajor) || id.equals(clientSeason);
     }
 
     public static String clientMinor() {
@@ -40,6 +44,16 @@ public final class ActiveEvents {
 
     public static String clientMajor() {
         return clientMajor;
+    }
+
+    /** Set by the client each tick: whether the local player is in the overworld. */
+    public static volatile boolean clientInOverworld = true;
+
+    /** Like {@link #contextualActive(String)} but on the client only while the player is in the overworld. */
+    public static boolean contextualActiveOverworld(String id) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null && server.isSameThread()) return serverActive(id);
+        return clientInOverworld && "Render thread".equals(Thread.currentThread().getName()) && clientActive(id);
     }
 
     public static boolean contextualActive(String id) {

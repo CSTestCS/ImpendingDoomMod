@@ -16,6 +16,11 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -47,7 +52,7 @@ public class UnstableEvent extends DoomEvent {
 
     @Override
     public void onStart(ServerLevel level, CompoundTag data) {
-        data.putInt("cooldown", 2400 + level.getRandom().nextInt(6000));
+        data.putInt("cooldown", 600 + level.getRandom().nextInt(1800));
     }
 
     @Override
@@ -59,10 +64,11 @@ public class UnstableEvent extends DoomEvent {
             int total = Math.max(1, data.getIntOr("quakeLength", 1));
             float progress = 1.0F - quake / (float) total;
             intensity = (float) Math.sin(progress * Math.PI) * data.getFloatOr("strength", 1.0F);
-            if (level.getGameTime() % 10 == 0) rumble(level, r);
+            if (level.getGameTime() % 8 == 0) rumble(level, r);
             if (quake == 0) {
                 intensity = 0;
-                data.putInt("cooldown", 6000 + r.nextInt(12000));
+                // 2000-4400 ticks of calm between quakes: about five quakes per Minecraft day.
+                data.putInt("cooldown", 2000 + r.nextInt(2400));
                 EventScheduler.syncAll(level, EventScheduler.data());
             }
             data.putInt("quake", quake);
@@ -77,22 +83,40 @@ public class UnstableEvent extends DoomEvent {
             data.putInt("quakeLength", length);
             data.putFloat("strength", 0.5F + r.nextFloat());
             for (ServerPlayer p : level.players()) {
-                p.sendSystemMessage(Component.translatable("message.impendingdoom.earthquake").withStyle(ChatFormatting.RED), true);
             }
         }
     }
 
     private static void rumble(ServerLevel level, RandomSource r) {
         for (ServerPlayer p : level.players()) {
-            EventUtil.notifySound(p, SoundEvents.WARDEN_DIG, SoundSource.AMBIENT, 0.6F + intensity, 0.3F);
+            level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.WARDEN_DIG, SoundSource.AMBIENT, 0.8F + intensity, 0.3F);
             BlockPos below = p.blockPosition().below();
             BlockState ground = level.getBlockState(below);
             if (!ground.isAir()) {
-                level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ground), p.getX(), p.getY() + 0.1, p.getZ(), 20, 4, 0.1, 4, 0.1);
+                level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ground), p.getX(), p.getY() + 0.1, p.getZ(), 30, 5, 0.1, 5, 0.15);
             }
-            if (p.onGround() && !p.isCreative() && r.nextInt(3) == 0) {
-                p.push((r.nextDouble() - 0.5) * 0.15 * intensity, 0.05 * intensity, (r.nextDouble() - 0.5) * 0.15 * intensity);
-                p.needsSync = true;
+            // Everything standing on the ground is thrown upward.
+            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(48),
+                    e -> e.onGround() && !(e instanceof Player pl && (pl.isCreative() || pl.isSpectator())))) {
+                if (r.nextInt(3) != 0) continue;
+                double up = (0.35 + r.nextDouble() * 0.35) * intensity;
+                e.setDeltaMovement(e.getDeltaMovement().add((r.nextDouble() - 0.5) * 0.2 * intensity, up, (r.nextDouble() - 0.5) * 0.2 * intensity));
+                e.needsSync = true;
+                if (e instanceof ServerPlayer sp) sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+            }
+            // The ground heaves: surface blocks jump up and fall back down.
+            if (EventUtil.canDestroyBlocks(level)) {
+                for (int i = 0; i < 6; i++) {
+                    BlockPos column = p.blockPosition().offset(r.nextInt(33) - 16, 0, r.nextInt(33) - 16);
+                    if (!level.isLoaded(column)) continue;
+                    BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).below();
+                    BlockState state = level.getBlockState(top);
+                    if (!(state.is(BlockTags.DIRT) || state.is(BlockTags.SAND) || state.is(Blocks.GRAVEL) || state.is(BlockTags.BASE_STONE_OVERWORLD))) continue;
+                    if (!level.getBlockState(top.above()).isAir()) continue;
+                    FallingBlockEntity fb = FallingBlockEntity.fall(level, top, state);
+                    fb.setDeltaMovement(0, 0.35 + r.nextDouble() * 0.4 * intensity, 0);
+                    fb.needsSync = true;
+                }
             }
         }
     }

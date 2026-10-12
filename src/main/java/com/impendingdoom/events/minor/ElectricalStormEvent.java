@@ -84,6 +84,7 @@ public class ElectricalStormEvent extends DoomEvent {
 
     public static void charge(Mob mob) {
         mob.addTag(CHARGED);
+        com.impendingdoom.util.EntityMarks.update(mob);
         EventUtil.addModifier(mob, Attributes.ATTACK_DAMAGE, "charged_damage", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         EventUtil.addModifier(mob, Attributes.MOVEMENT_SPEED, "charged_speed", 0.15, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
@@ -112,13 +113,6 @@ public class ElectricalStormEvent extends DoomEvent {
         });
     }
 
-    @SubscribeEvent
-    public static void onChargedTick(EntityTickEvent.Post event) {
-        Entity e = event.getEntity();
-        if (e.tickCount % 8 != 0 || !(e.level() instanceof ServerLevel level) || !e.entityTags().contains(CHARGED)) return;
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, e.getX(), e.getY() + e.getBbHeight() * 0.6, e.getZ(), 3,
-                e.getBbWidth() * 0.5, e.getBbHeight() * 0.3, e.getBbWidth() * 0.5, 0.05);
-    }
 
     @SubscribeEvent
     public static void onHit(LivingDamageEvent.Post event) {

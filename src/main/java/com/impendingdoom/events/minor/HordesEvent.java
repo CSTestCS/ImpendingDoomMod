@@ -42,10 +42,20 @@ public class HordesEvent extends DoomEvent {
 
     @Override
     public void onTick(ServerLevel level, CompoundTag data) {
+        // Three waves every night (start of night, middle, late night); each wave brings one or two hordes.
         long day = DayClock.day(level);
-        if (DayClock.isNight(level) && data.getLongOr("lastNight", -1) != day) {
-            data.putLong("lastNight", day);
-            for (ServerPlayer player : EventUtil.targets(level)) spawnHorde(level, player);
+        long time = DayClock.timeOfDay(level);
+        int wave = time >= 13000 && time < 15500 ? 1 : time >= 15500 && time < 18000 ? 2 : time >= 18000 && time < 21000 ? 3 : 0;
+        long key = day * 10 + wave;
+        if (wave > 0 && data.getLongOr("lastWave", -1) != key) {
+            data.putLong("lastWave", key);
+            for (ServerPlayer player : EventUtil.targets(level)) {
+                int hordes = 1 + level.getRandom().nextInt(2);
+                for (int i = 0; i < hordes; i++) spawnHorde(level, player);
+                if (EventScheduler.isActive(com.impendingdoom.events.major.FallEvent.ID)) {
+                    com.impendingdoom.events.major.FallEvent.spawnTinySpiderHorde(level, player);
+                }
+            }
         }
         if (level.getGameTime() % 100 == 0) {
             for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.getTarget() == null)) {
@@ -67,7 +77,6 @@ public class HordesEvent extends DoomEvent {
             BlockPos pos = EventUtil.surfacePos(level, origin, 0, 5, level.getRandom());
             joinHorde(level, EventUtil.spawn(level, type, pos == null ? origin : pos), hordeId, player.getUUID());
         }
-        player.sendSystemMessage(Component.translatable("message.impendingdoom.horde", type.getDescription()).withStyle(ChatFormatting.RED), true);
     }
 
     private static void joinHorde(ServerLevel level, Entity entity, String hordeId, UUID prey) {

@@ -3,6 +3,7 @@ package com.impendingdoom.core;
 import com.impendingdoom.ImpendingDoom;
 import com.impendingdoom.events.major.SummerEvent;
 import com.impendingdoom.events.major.UnstableEvent;
+import com.impendingdoom.events.major.WinterEvent;
 import com.impendingdoom.network.DoomStatePayload;
 import com.impendingdoom.registry.ModGameRules;
 import com.impendingdoom.registry.ModItems;
@@ -37,6 +38,11 @@ import java.util.List;
  * Drives the event cycle: every {@code days_between_events} Minecraft days an event begins. After
  * {@code minor_events_before_major} minor events, the next event is a major event. When an event begins the
  * following event is chosen at random and every player receives an Omen naming it.
+ * <p>
+ * Seasons are major events that persist on their own layer: a season stays active through other major events and
+ * only ends when the next season begins.
+ * <p>
+ * Players are only ever told that an event has begun (title + one chat line). Events are never explained.
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public final class EventScheduler {
@@ -59,20 +65,25 @@ public final class EventScheduler {
         DoomSavedData d = cached;
         if (d == null) return new CompoundTag();
         if (id.equals(d.currentMinor)) return d.minorData;
+        if (id.equals(d.currentSeason)) return d.seasonData;
         if (id.equals(d.currentMajor)) return d.majorData;
         return new CompoundTag();
+    }
+
+    private static void publish(DoomSavedData d) {
+        ActiveEvents.setServer(d.currentMinor, d.currentMajor, d.currentSeason);
     }
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         cached = DoomSavedData.get(event.getServer());
-        ActiveEvents.setServer(cached.currentMinor, cached.currentMajor);
+        publish(cached);
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         cached = null;
-        ActiveEvents.setServer("", "");
+        ActiveEvents.setServer("", "", "");
     }
 
     @SubscribeEvent
@@ -89,7 +100,7 @@ public final class EventScheduler {
         if (!d.initialized) {
             d.initialized = true;
             d.lastEventDay = day;
-            chooseNext(level, d, false);
+            chooseNext(level, d);
             d.setDirty();
         }
         // Time was set backwards with /time: restart the countdown rather than waiting for the old day.
@@ -115,13 +126,21 @@ public final class EventScheduler {
         if (minor != null) {
             try {
                 minor.onTick(level, d.minorData);
-                if (minor.isComplete(level, d.minorData)) endMinor(level, d, true);
+                if (minor.isComplete(level, d.minorData)) endMinor(level, d);
             } catch (RuntimeException e) {
                 logError(minor, e);
             }
         }
+        DoomEvent season = EventRegistry.get(d.currentSeason);
+        if (season != null) {
+            try {
+                season.onTick(level, d.seasonData);
+            } catch (RuntimeException e) {
+                logError(season, e);
+            }
+        }
         DoomEvent major = EventRegistry.get(d.currentMajor);
-        if (major != null) {
+        if (major != null && !major.isSeason()) {
             try {
                 major.onTick(level, d.majorData);
             } catch (RuntimeException e) {
@@ -145,75 +164,98 @@ public final class EventScheduler {
             next = pick(level, d, wantMajor);
         }
 
-        if (!d.currentMinor.isEmpty()) endMinor(level, d, false);
+        if (!d.currentMinor.isEmpty()) endMinor(level, d);
 
         if (next.isMajor()) {
-            if (!d.currentMajor.isEmpty()) endMajor(level, d);
+            // The previous non-season major ends; a season only ends when another season begins.
+            DoomEvent previous = EventRegistry.get(d.currentMajor);
+            if (previous != null && !previous.isSeason()) endMajor(level, d);
             d.currentMajor = next.id();
-            d.majorData = new CompoundTag();
-            d.majorStartDay = day;
             d.minorsSinceMajor = 0;
+            d.majorStartDay = day;
             if (next.isSeason()) {
+                if (!d.currentSeason.isEmpty()) endSeason(level, d);
+                d.currentSeason = next.id();
+                d.seasonData = new CompoundTag();
                 d.seasonIndex = (EventRegistry.SEASONS.indexOf(next.id()) + 1) % EventRegistry.SEASONS.size();
+                publish(d);
+                next.onStart(level, d.seasonData);
+            } else {
+                d.majorData = new CompoundTag();
+                publish(d);
+                next.onStart(level, d.majorData);
             }
-            ActiveEvents.setServer(d.currentMinor, d.currentMajor);
-            next.onStart(level, d.majorData);
         } else {
             d.currentMinor = next.id();
             d.minorData = new CompoundTag();
             d.minorsSinceMajor++;
-            ActiveEvents.setServer(d.currentMinor, d.currentMajor);
+            publish(d);
             next.onStart(level, d.minorData);
         }
         d.lastEventDay = day;
         d.eventCount++;
         d.setDirty();
 
-        announce(level, next.displayName(), Component.translatable(next.isMajor() ? "omen.impendingdoom.major" : "omen.impendingdoom.minor")
-                .withStyle(ChatFormatting.GRAY), next.isMajor());
-        level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("message.impendingdoom.event_started",
-                next.displayName()).append(Component.literal(" ")).append(next.description().withStyle(ChatFormatting.GRAY)), false);
-
-        chooseNext(level, d, true);
+        announce(level, next);
+        chooseNext(level, d);
         syncAll(level, d);
     }
 
-    public static void endMinor(ServerLevel level, DoomSavedData d, boolean early) {
+    public static void endMinor(ServerLevel level, DoomSavedData d) {
         DoomEvent minor = EventRegistry.get(d.currentMinor);
         String id = d.currentMinor;
         CompoundTag data = d.minorData;
         d.currentMinor = "";
         d.minorData = new CompoundTag();
         d.lastMinor = id;
-        ActiveEvents.setServer(d.currentMinor, d.currentMajor);
+        publish(d);
         if (minor != null) {
             try {
                 minor.onEnd(level, data);
             } catch (RuntimeException e) {
                 ImpendingDoom.LOGGER.error("Error ending event {}", id, e);
             }
-            if (early) {
-                level.getServer().getPlayerList().broadcastSystemMessage(
-                        Component.translatable("message.impendingdoom.event_ended", minor.displayName()).withStyle(ChatFormatting.GREEN), false);
-            }
         }
         d.setDirty();
         syncAll(level, d);
     }
 
+    /** Ends the current non-season major event (if the current major is a season, ends the season). */
     public static void endMajor(ServerLevel level, DoomSavedData d) {
         DoomEvent major = EventRegistry.get(d.currentMajor);
+        if (major != null && major.isSeason()) {
+            endSeason(level, d);
+            return;
+        }
         String id = d.currentMajor;
         CompoundTag data = d.majorData;
-        d.currentMajor = "";
+        d.currentMajor = d.currentSeason;
         d.majorData = new CompoundTag();
         d.lastMajor = id;
-        ActiveEvents.setServer(d.currentMinor, d.currentMajor);
+        publish(d);
         if (major != null) {
             try {
                 major.onEnd(level, data);
             } catch (RuntimeException e) {
                 ImpendingDoom.LOGGER.error("Error ending event {}", id, e);
+            }
+        }
+        d.setDirty();
+    }
+
+    public static void endSeason(ServerLevel level, DoomSavedData d) {
+        DoomEvent season = EventRegistry.get(d.currentSeason);
+        String id = d.currentSeason;
+        CompoundTag data = d.seasonData;
+        d.currentSeason = "";
+        d.seasonData = new CompoundTag();
+        if (id.equals(d.currentMajor)) d.currentMajor = "";
+        publish(d);
+        if (season != null) {
+            try {
+                season.onEnd(level, data);
+            } catch (RuntimeException e) {
+                ImpendingDoom.LOGGER.error("Error ending season {}", id, e);
             }
         }
         d.setDirty();
@@ -235,22 +277,17 @@ public final class EventScheduler {
     }
 
     /** Chooses the following event and hands out omens. */
-    public static void chooseNext(ServerLevel level, DoomSavedData d, boolean announce) {
+    public static void chooseNext(ServerLevel level, DoomSavedData d) {
         boolean major = d.minorsSinceMajor >= ModGameRules.minorEventsBeforeMajor(level);
-        DoomEvent next = pick(level, d, major);
-        setNext(level, d, next, announce);
+        setNext(level, d, pick(level, d, major));
     }
 
-    public static void setNext(ServerLevel level, DoomSavedData d, DoomEvent next, boolean announce) {
+    public static void setNext(ServerLevel level, DoomSavedData d, DoomEvent next) {
         d.nextEvent = next.id();
         d.omenSerial++;
         d.setDirty();
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             giveOmen(player, d);
-        }
-        if (announce) {
-            level.getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("message.impendingdoom.omen_received").withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC), false);
         }
     }
 
@@ -265,17 +302,15 @@ public final class EventScheduler {
         return (d.lastEventDay + (long) interval * (minorsLeft + 1)) - DayClock.day(level);
     }
 
+    /** The Omen names the next event and when it arrives. It never explains what the event does. */
     public static ItemStack createOmen(DoomEvent event, long arrivalDay) {
         ItemStack stack = new ItemStack(ModItems.DOOM_OMEN.get());
         ChatFormatting nameColor = event.isMajor() ? ChatFormatting.DARK_RED : ChatFormatting.GOLD;
         stack.set(DataComponents.CUSTOM_NAME, Component.translatable("item.impendingdoom.doom_omen.named", event.displayName())
                 .withStyle(s -> s.withItalic(false).withColor(nameColor)));
         List<Component> lore = List.of(
-                Component.translatable(event.isMajor() ? "omen.impendingdoom.major" : "omen.impendingdoom.minor")
-                        .withStyle(s -> s.withItalic(false).withColor(ChatFormatting.GRAY)),
-                event.description().withStyle(s -> s.withItalic(true).withColor(ChatFormatting.DARK_PURPLE)),
                 Component.translatable("omen.impendingdoom.arrives", arrivalDay + 1)
-                        .withStyle(s -> s.withItalic(false).withColor(ChatFormatting.YELLOW)));
+                        .withStyle(s -> s.withItalic(false).withColor(ChatFormatting.GRAY)));
         stack.set(DataComponents.LORE, new ItemLore(lore));
         CompoundTag tag = new CompoundTag();
         tag.putString("event", event.id());
@@ -290,16 +325,18 @@ public final class EventScheduler {
         ItemStack omen = createOmen(next, nextEventDay((ServerLevel) player.level(), d));
         if (!player.getInventory().add(omen)) EventUtil.dropNear(player, omen);
         player.getPersistentData().putInt(OMEN_KEY, d.omenSerial);
-        EventUtil.notifySound(player, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 0.6F);
     }
 
-    private static void announce(ServerLevel level, Component title, Component subtitle, boolean major) {
+    /** The only notification players get: the event's name when it begins. */
+    private static void announce(ServerLevel level, DoomEvent event) {
+        Component title = event.displayName();
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 80, 20));
             player.connection.send(new ClientboundSetTitleTextPacket(title));
-            player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
-            EventUtil.notifySound(player, major ? SoundEvents.ENDER_DRAGON_GROWL : SoundEvents.WITHER_AMBIENT, SoundSource.MASTER, 0.8F, 0.7F);
+            player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
+            EventUtil.notifySound(player, event.isMajor() ? SoundEvents.ENDER_DRAGON_GROWL : SoundEvents.WITHER_AMBIENT, SoundSource.MASTER, 0.8F, 0.7F);
         }
+        level.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("message.impendingdoom.event_started", event.displayName()), false);
     }
 
     public static void syncAll(ServerLevel level, DoomSavedData d) {
@@ -309,8 +346,9 @@ public final class EventScheduler {
     }
 
     public static void sync(ServerPlayer player, DoomSavedData d) {
-        PacketDistributor.sendToPlayer(player, new DoomStatePayload(d.currentMinor, d.currentMajor,
-                SummerEvent.thirst(player), UnstableEvent.intensity()));
+        int flags = WinterEvent.blizzard() ? DoomStatePayload.BLIZZARD : 0;
+        PacketDistributor.sendToPlayer(player, new DoomStatePayload(d.currentMinor, d.currentMajor, d.currentSeason,
+                SummerEvent.thirst(player), UnstableEvent.intensity(), flags));
     }
 
     @SubscribeEvent
@@ -323,8 +361,10 @@ public final class EventScheduler {
         }
         DoomEvent minor = EventRegistry.get(d.currentMinor);
         if (minor != null) minor.onPlayerJoin(player, d.minorData);
+        DoomEvent season = EventRegistry.get(d.currentSeason);
+        if (season != null) season.onPlayerJoin(player, d.seasonData);
         DoomEvent major = EventRegistry.get(d.currentMajor);
-        if (major != null) major.onPlayerJoin(player, d.majorData);
+        if (major != null && !major.isSeason()) major.onPlayerJoin(player, d.majorData);
         sync(player, d);
     }
 }

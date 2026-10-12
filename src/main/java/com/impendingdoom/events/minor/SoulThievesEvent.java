@@ -107,9 +107,6 @@ public class SoulThievesEvent extends DoomEvent {
         addGoals(mob);
         level.playSound(null, mob.blockPosition(), SoundEvents.WITHER_SPAWN, SoundSource.HOSTILE, 0.6F, 1.6F);
         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, mob.getX(), mob.getY() + 1, mob.getZ(), 60, 0.6, 0.8, 0.6, 0.05);
-        for (Player p : level.getEntitiesOfClass(Player.class, mob.getBoundingBox().inflate(32))) {
-            p.sendSystemMessage(Component.translatable("message.impendingdoom.soul_thief_empowered").withStyle(ChatFormatting.DARK_AQUA));
-        }
     }
 
     @SubscribeEvent

@@ -166,7 +166,6 @@ public class HuntedEvent extends DoomEvent {
         for (int i = 0; i < members.size(); i++) {
             spawnMember(level, player, members.getCompoundOrEmpty(i), i, gen, origin);
         }
-        player.sendSystemMessage(Component.translatable("message.impendingdoom.hunted").withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC));
     }
 
     private static void spawnMember(ServerLevel level, ServerPlayer owner, CompoundTag record, int slot, int gen, BlockPos origin) {

@@ -88,6 +88,8 @@ public class ThiefGoal extends Goal {
     @Override
     public void tick() {
         if (!(thief.level() instanceof ServerLevel level)) return;
+        // Arms out, so whatever it carries is visible.
+        if (!thief.isAggressive()) thief.setAggressive(true);
         climbAndGlide();
         switch (state()) {
             case SEEK -> seek(level);
@@ -128,11 +130,20 @@ public class ThiefGoal extends Goal {
             ServerLevelHelper.wander(thief);
             return;
         }
-        if (thief.blockPosition().closerThan(chest, 2.5)) {
+        if (thief.blockPosition().closerThan(chest, 2.5) && canReach(level, chest)) {
             steal(level, chest);
             return;
         }
         travel(level, chest);
+    }
+
+    /** The chest must be in plain reach: nothing between the thief's eyes and the chest. */
+    private boolean canReach(ServerLevel level, BlockPos chest) {
+        Vec3 eye = thief.getEyePosition();
+        Vec3 target = Vec3.atCenterOf(chest);
+        net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, target,
+                net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, thief));
+        return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS || hit.getBlockPos().equals(chest);
     }
 
     private void travel(ServerLevel level, BlockPos dest) {
@@ -223,6 +234,9 @@ public class ThiefGoal extends Goal {
                 kept.add(stack);
             }
         }
+        // Show off the loot: hold it in the off hand (and the main hand when there is no weapon).
+        if (!kept.isEmpty()) GearUtil.equip(thief, EquipmentSlot.OFFHAND, kept.remove(0), 2.0F);
+        if (thief.getMainHandItem().isEmpty() && !kept.isEmpty()) GearUtil.equip(thief, EquipmentSlot.MAINHAND, kept.remove(0), 2.0F);
         storeLoot(level, kept);
         thief.setPersistenceRequired();
         setState(ESCAPE);
