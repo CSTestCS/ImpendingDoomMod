@@ -55,7 +55,7 @@ public class BloodlustEvent extends DoomEvent {
     }
 
     private static void haze(Mob mob) {
-        if (mob instanceof ArmorStand || mob.entityTags().contains(TAG) || mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
+        if (mob.entityTags().contains(TAG) || mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
         mob.addEffect(new MobEffectInstance(ModEffects.BLOODLUST_HAZE, mob instanceof Enemy ? HOSTILE_DURATION : OTHER_DURATION, 0));
         EntityMarks.update(mob);
     }

@@ -146,7 +146,9 @@ public class KaijuEvent extends DoomEvent {
             kaiju.swingForAttack(net.minecraft.world.InteractionHand.MAIN_HAND);
             float damage = EventUtil.hasAttribute(kaiju, Attributes.ATTACK_DAMAGE) ? (float) kaiju.getAttributeValue(Attributes.ATTACK_DAMAGE) : 20.0F;
             target.hurtServer(level, kaiju.damageSources().mobAttack(kaiju), Math.max(damage, 15.0F));
-            target.knockback(2.5, -dx / Math.max(flat, 0.01), -dz / Math.max(flat, 0.01));
+            target.push(dx / Math.max(flat, 0.01) * 2.0, 0.8, dz / Math.max(flat, 0.01) * 2.0);
+            target.needsSync = true;
+            if (target instanceof ServerPlayer sp) sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(sp));
             level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY(), target.getZ(), 3, 1.0, 0.5, 1.0, 0.0);
             level.playSound(null, target.blockPosition(), SoundEvents.RAVAGER_STUNNED, SoundSource.HOSTILE, 4.0F, 0.4F);
         }

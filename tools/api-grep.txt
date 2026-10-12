@@ -1,6 +1,0 @@
-C:net.minecraft.client.renderer.entity.layers.EnergySwirlLayer|submitModel|invoke|getstatic
-net.minecraft.sounds.SoundEvents|CREAKING_|BREEZE_WIND|RAVAGER_STUNNED|BAT_HURT
-net.minecraft.world.level.Level|addAlwaysVisibleParticle|addParticle
-net.minecraft.world.level.LevelHeightAccessor|Section
-net.minecraft.world.item.Items|SPEAR
-net.minecraft.world.damagesource.DamageSources|flyIntoWall|explosion
