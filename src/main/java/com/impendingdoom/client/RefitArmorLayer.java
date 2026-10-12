@@ -3,7 +3,7 @@ package com.impendingdoom.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -134,12 +134,12 @@ public class RefitArmorLayer<S extends LivingEntityRenderState, M extends Entity
             }
             Identifier texture = layer.textureId().withPath(p -> "textures/entity/equipment/" + layerType.getSerializedName() + "/" + p + ".png");
             int finalColor = color;
-            collector.submitCustomGeometry(poseStack, RenderType.armorCutoutNoCull(texture), (pose, consumer) -> {
+            collector.submitCustomGeometry(poseStack, RenderTypes.armorCutoutNoCull(texture), (pose, consumer) -> {
                 for (int i = 0; i < fitted.size(); i++) emit(fitted.get(i), fits.get(i), consumer, light, finalColor);
             });
         }
         if (stack.hasFoil()) {
-            collector.submitCustomGeometry(poseStack, RenderType.armorEntityGlint(), (pose, consumer) -> {
+            collector.submitCustomGeometry(poseStack, RenderTypes.armorEntityGlint(), (pose, consumer) -> {
                 for (int i = 0; i < fitted.size(); i++) emit(fitted.get(i), fits.get(i), consumer, light, 0xFFFFFFFF);
             });
         }

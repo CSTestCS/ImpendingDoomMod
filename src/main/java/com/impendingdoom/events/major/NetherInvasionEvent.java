@@ -173,7 +173,7 @@ public class NetherInvasionEvent extends DoomEvent {
     }
 
     private static AbstractPiglin piglin(ServerLevel level, BlockPos pos, RandomSource r, boolean brute) {
-        Entity e = EventUtil.spawn(level, brute ? EntityTypes.PIGLIN_BRUTE : EntityTypes.PIGLIN, pos);
+        Entity e = brute ? EventUtil.spawn(level, EntityTypes.PIGLIN_BRUTE, pos) : EventUtil.spawn(level, EntityTypes.PIGLIN, pos);
         if (!(e instanceof AbstractPiglin piglin)) return null;
         invader(piglin);
         piglin.setImmuneToZombification(true);

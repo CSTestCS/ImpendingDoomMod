@@ -4,6 +4,7 @@ import com.impendingdoom.ImpendingDoom;
 import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.core.EventScheduler;
 import com.impendingdoom.registry.ModTags;
+import com.impendingdoom.util.EventUtil;
 import com.impendingdoom.util.GearUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;

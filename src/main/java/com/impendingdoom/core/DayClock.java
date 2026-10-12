@@ -12,7 +12,7 @@ public final class DayClock {
     private DayClock() {}
 
     public static long dayTime(Level level) {
-        return level.getDayTime();
+        return level.getOverworldClockTime();
     }
 
     public static long day(Level level) {

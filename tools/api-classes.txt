@@ -325,3 +325,10 @@ net.neoforged.neoforge.network.registration.PayloadRegistrar
 net.neoforged.neoforge.registries.DeferredHolder
 net.neoforged.neoforge.registries.DeferredRegister
 net.neoforged.neoforge.server.ServerLifecycleHooks
+net.neoforged.neoforge.event.ModifyDefaultComponentsEvent$ItemWithComponentsPredicate
+net.neoforged.neoforge.event.ModifyDefaultComponentsEvent$Initializer
+net.minecraft.world.clock.ClockInstance
+net.minecraft.world.clock.ServerClockManager$ServerClockInstance
+net.minecraft.world.clock.WorldClock
+net.minecraft.world.clock.WorldClocks
+net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent

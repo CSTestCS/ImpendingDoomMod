@@ -1,5 +1,5 @@
-BreakEvent
-ColorHandler
+BlockEvent|BreakEvent
+ColorHandler|Color
 BlockColor
 BlockTint
 HARNESS|Harness

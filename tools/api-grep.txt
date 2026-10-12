@@ -1,0 +1,9 @@
+net.minecraft.world.item.Items|harness
+net.minecraft.server.level.ServerLevel|eather|rain|thunder|clock|time
+net.minecraft.world.level.Level|eather|rain|thunder|clock|time|day
+net.minecraft.client.renderer.LevelRenderer|changed|dirty|chunk|update|reset
+net.minecraft.client.Options|gui|hide
+net.minecraft.client.Minecraft|gui|levelRenderer|options
+net.neoforged.fml.config.ModConfig$Type|Type
+net.minecraft.client.renderer.rendertype.RenderTypes|armor|glint
+net.minecraft.world.entity.player.Player$BedSleepingProblem|static

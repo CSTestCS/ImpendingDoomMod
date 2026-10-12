@@ -3,7 +3,7 @@ package com.impendingdoom.client;
 import com.impendingdoom.events.major.SummerEvent;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 
 /** Ten water droplets drawn above the hunger bar during Summer. */
@@ -15,10 +15,10 @@ public final class ThirstHud {
 
     private ThirstHud() {}
 
-    public static void render(GuiGraphics graphics, DeltaTracker delta) {
+    public static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.options.hideGui || !ClientModEvents.summer()) return;
+        if (player == null || !ClientModEvents.summer()) return;
         if (player.isCreative() || player.isSpectator()) return;
         int thirst = ClientDoomState.thirst;
         int right = graphics.guiWidth() / 2 + 91;
@@ -32,7 +32,7 @@ public final class ThirstHud {
         }
     }
 
-    private static void drawDrop(GuiGraphics g, int x, int y, int color) {
+    private static void drawDrop(GuiGraphicsExtractor g, int x, int y, int color) {
         // A small droplet: narrow tip widening into a round base.
         g.fill(x + 3, y, x + 5, y + 2, OUTLINE);
         g.fill(x + 2, y + 2, x + 6, y + 4, OUTLINE);

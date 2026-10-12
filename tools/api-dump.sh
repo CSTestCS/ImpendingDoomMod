@@ -21,7 +21,12 @@ while read -r pat; do
   [ -z "$pat" ] && continue
   echo "===SEARCH $pat"
   for j in "${JARS[@]}"; do
-    case "$j" in *.jar) unzip -Z1 "$j" 2>/dev/null | grep -E "$pat" | grep '\.class$' | grep -v '\$' | sed "s|^|$(basename "$j"): |" ;; esac
+    case "$j" in *.jar) unzip -Z1 "$j" 2>/dev/null | grep -E "$pat" | grep '\.class$' | sed "s|^|$(basename "$j"): |" ;; esac
   done
 done < tools/api-search.txt
+while IFS='|' read -r cls pat; do
+  [ -z "$cls" ] && continue
+  echo "===GREP $cls $pat"
+  javap -cp "$CP" -public "$cls" 2>&1 | grep -iE "$pat" | sed 's/^/  ~/'
+done < tools/api-grep.txt
 echo "===API-DUMP-END==="
