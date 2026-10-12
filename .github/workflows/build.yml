@@ -76,3 +76,9 @@ jobs:
           git commit -m "Build mod jar [skip ci]"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Startup smoke test
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 900 ./gradlew runGameTestServer -Pneo_version=${{ steps.neo.outputs.version }} 2>&1 | tee server.log | tail -300

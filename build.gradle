@@ -27,6 +27,10 @@ neoForge {
             server()
             programArgument '--nogui'
         }
+        // Boots a headless server with the mod and exits; used by CI as a startup smoke test.
+        gameTestServer {
+            type = "gameTestServer"
+        }
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
