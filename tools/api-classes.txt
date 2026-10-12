@@ -1,3 +1,5 @@
-net.minecraft.client.color.block.BlockTintSource
-net.minecraft.client.color.block.BlockTintSources
-net.minecraft.client.renderer.block.BlockAndTintGetter
+net.minecraft.core.particles.TrailParticleOption
+net.minecraft.world.level.saveddata.WeatherData
+net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket
+net.minecraft.client.renderer.SubmitNodeCollector
+net.minecraft.world.inventory.ArmorSlot

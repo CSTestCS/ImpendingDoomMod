@@ -51,8 +51,8 @@ jobs:
           set -o pipefail
           ./gradlew build -Pneo_version=${{ steps.neo.outputs.version }} 2>&1 | tee build.log
 
-      - name: Print API signatures (on failure)
-        if: failure()
+      - name: Print API signatures (on failure, or when the commit message asks for it)
+        if: failure() || contains(github.event.head_commit.message, '[api-dump]')
         run: |
           tools/api-dump.sh -Pneo_version=${{ steps.neo.outputs.version }} | python3 tools/api-filter.py
           echo "===COMPILE-ERRORS==="

@@ -27,6 +27,9 @@ done < tools/api-search.txt
 while IFS='|' read -r cls pat; do
   [ -z "$cls" ] && continue
   echo "===GREP $cls $pat"
-  javap -cp "$CP" -public "$cls" 2>&1 | grep -iE "$pat" | sed 's/^/  ~/'
+  case "$cls" in
+    C:*) javap -cp "$CP" -c -p "${cls#C:}" 2>&1 | grep -iE "$pat" | sed 's/^/  ~/' ;;
+    *) javap -cp "$CP" -public "$cls" 2>&1 | grep -iE "$pat" | sed 's/^/  ~/' ;;
+  esac
 done < tools/api-grep.txt
 echo "===API-DUMP-END==="
