@@ -18,7 +18,7 @@ public final class NextEventHud {
 
     public static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null) return;
         long hud = ClientDoomState.hud;
         if (NextEventHudSettings.hidden(hud)) return;
 
@@ -55,7 +55,7 @@ public final class NextEventHud {
         x = Math.max(0, Math.min(sw - width, x));
         y = Math.max(0, Math.min(sh - height, y));
         graphics.fill(x - 2, y - 2, x + width + 2, y + height + 1, 0x80000000);
-        graphics.drawString(font, title, x, y, 0xFFFFFFFF, true);
-        if (when != null) graphics.drawString(font, when, x, y + font.lineHeight + 1, 0xFFFFFFFF, true);
+        graphics.text(font, title, x, y, 0xFFFFFFFF, true);
+        if (when != null) graphics.text(font, when, x, y + font.lineHeight + 1, 0xFFFFFFFF, true);
     }
 }

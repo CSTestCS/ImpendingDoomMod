@@ -102,7 +102,8 @@ public final class GroupWander {
         if (id.isEmpty()) return false;
         State state = GROUPS.computeIfAbsent(id, k -> new State());
         Entity leaderEntity = state.leader == null ? null : level.getEntity(state.leader);
-        if (!(leaderEntity instanceof Mob leader) || !leader.isAlive() || !id.equals(group(leader))) {
+        Mob leader = leaderEntity instanceof Mob m && m.isAlive() && id.equals(group(m)) ? m : null;
+        if (leader == null) {
             state.leader = mob.getUUID();
             state.destination = null;
             leader = mob;
