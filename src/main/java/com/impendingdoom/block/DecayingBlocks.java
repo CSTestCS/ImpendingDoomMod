@@ -80,7 +80,8 @@ public final class DecayingBlocks {
         String id = "decaying_" + name;
         DeferredHolder<Block, Block> holder = ModBlocks.BLOCKS.register(id, key -> new DecayingBlock(
                 BlockBehaviour.Properties.ofFullCopy(original.get()).setId(ResourceKey.create(Registries.BLOCK, key))
-                        .noOcclusion(), original));
+                        // Some originals (logs) pick their map color from state properties this block doesn't have.
+                        .mapColor(original.get().defaultMapColor()).noOcclusion(), original));
         ALL.add(new Entry(name, original, tint, holder));
     }
 
