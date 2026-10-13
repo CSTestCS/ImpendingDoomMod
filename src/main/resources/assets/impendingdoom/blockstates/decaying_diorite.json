@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "impendingdoom:block/decaying_diorite_2"
+    },
+    "layers=2": {
+      "model": "impendingdoom:block/decaying_diorite_4"
+    },
+    "layers=3": {
+      "model": "impendingdoom:block/decaying_diorite_6"
+    },
+    "layers=4": {
+      "model": "impendingdoom:block/decaying_diorite_8"
+    },
+    "layers=5": {
+      "model": "impendingdoom:block/decaying_diorite_10"
+    },
+    "layers=6": {
+      "model": "impendingdoom:block/decaying_diorite_12"
+    },
+    "layers=7": {
+      "model": "impendingdoom:block/decaying_diorite_14"
+    },
+    "layers=8": {
+      "model": "impendingdoom:block/decaying_diorite_16"
+    }
+  }
+}

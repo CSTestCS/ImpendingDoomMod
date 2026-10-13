@@ -133,7 +133,7 @@ public class IncomingRaidEvent extends DoomEvent {
             if (level.getGameTime() % 40 == 0) {
                 for (Mob m : raiders) {
                     if (m.getTarget() == null) {
-                        ServerPlayer target = EventUtil.nearestTarget(level, m, 48);
+                        var target = com.impendingdoom.util.MobSight.nearestVisiblePlayer(level, m, 32);
                         if (target != null) m.setTarget(target);
                     }
                     if (!m.blockPosition().closerThan(center, 140)) m.teleportTo(center.getX(), center.getY() + 1, center.getZ());

@@ -1,0 +1,8 @@
+{
+  "parent": "impendingdoom:block/decaying_template_none_8",
+  "textures": {
+    "top": "minecraft:block/andesite",
+    "side": "minecraft:block/andesite",
+    "bottom": "minecraft:block/andesite"
+  }
+}

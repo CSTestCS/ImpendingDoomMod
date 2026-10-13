@@ -1,0 +1,8 @@
+net.minecraft.client.gui.GuiGraphicsExtractor|String|Component|text|fill
+net.minecraft.network.codec.StreamCodec|composite
+net.minecraft.world.level.block.state.BlockBehaviour|onPlace|void tick|getDrops
+net.minecraft.world.level.block.Block|asItem
+net.minecraft.world.level.Level|addAlwaysVisibleParticle
+net.minecraft.world.entity.ai.Brain|checkMemory|eraseMemory|setMemory
+net.minecraft.world.entity.ai.memory.WalkTarget|WalkTarget\(
+net.minecraft.world.entity.animal.bee.Bee|Angry|anger

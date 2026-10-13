@@ -45,7 +45,7 @@ import java.util.List;
 /**
  * Blood Moon: every night the moon is red (client tint) and more hostile mobs spawn with potion effects. Zombies
  * often carry tools and slowly break blocks their tool is good at. Hunting creepers explode as soon as they lose
- * their path to the player. Sleeping requires a block of wool over your head, which blinds you.
+ * their path to the player. Sleeping requires a block of wool over your head (which blacks out your sight).
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public class BloodMoonEvent extends DoomEvent {
@@ -153,21 +153,12 @@ public class BloodMoonEvent extends DoomEvent {
         }
     }
 
+    /** Nobody sleeps through a Blood Moon or an Electrical Storm unless they wear wool over their eyes. */
     @SubscribeEvent
     public static void canSleep(CanPlayerSleepEvent event) {
-        if (!EventScheduler.isActive(ID)) return;
+        if (!EventScheduler.isActive(ID) && !EventScheduler.isActive(ElectricalStormEvent.ID)) return;
         if (!event.getEntity().getItemBySlot(EquipmentSlot.HEAD).is(ItemTags.WOOL)) {
             event.setProblem(Player.BedSleepingProblem.OTHER_PROBLEM);
-        }
-    }
-
-    /** Wool over the eyes blinds you. */
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        Player player = event.getEntity();
-        if (player.level().isClientSide() || player.tickCount % 20 != 0) return;
-        if (player.getItemBySlot(EquipmentSlot.HEAD).is(ItemTags.WOOL)) {
-            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, false, false));
         }
     }
 }

@@ -6,10 +6,7 @@ import com.impendingdoom.events.major.UnstableEvent;
 import com.impendingdoom.events.major.WinterEvent;
 import com.impendingdoom.network.DoomStatePayload;
 import com.impendingdoom.registry.ModGameRules;
-import com.impendingdoom.registry.ModItems;
 import com.impendingdoom.util.EventUtil;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -20,9 +17,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.ItemLore;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -37,7 +31,7 @@ import java.util.List;
 /**
  * Drives the event cycle: every {@code days_between_events} Minecraft days an event begins. After
  * {@code minor_events_before_major} minor events, the next event is a major event. When an event begins the
- * following event is chosen at random and every player receives an Omen naming it.
+ * following event is chosen at random; a HUD element shows every player what comes next and on which day.
  * <p>
  * Seasons are major events that persist on their own layer: a season stays active through other major events and
  * only ends when the next season begins.
@@ -46,7 +40,6 @@ import java.util.List;
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public final class EventScheduler {
-    private static final String OMEN_KEY = "impendingdoom_omen_serial";
     private static DoomSavedData cached;
     private static int errorCooldown;
 
@@ -316,11 +309,8 @@ public final class EventScheduler {
     /** Sets the next event. Callers choosing it on purpose (commands) also set {@code d.nextForced}. */
     public static void setNext(ServerLevel level, DoomSavedData d, DoomEvent next) {
         d.nextEvent = next.id();
-        d.omenSerial++;
         d.setDirty();
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            giveOmen(player, d);
-        }
+        syncAll(level, d);
     }
 
     public static long nextEventDay(ServerLevel level, DoomSavedData d) {
@@ -332,31 +322,6 @@ public final class EventScheduler {
         int interval = ModGameRules.daysBetweenEvents(level);
         int minorsLeft = Math.max(0, ModGameRules.minorEventsBeforeMajor(level) - d.minorsSinceMajor);
         return (d.lastEventDay + (long) interval * (minorsLeft + 1)) - DayClock.day(level);
-    }
-
-    /** The Omen names the next event and when it arrives. It never explains what the event does. */
-    public static ItemStack createOmen(DoomEvent event, long arrivalDay) {
-        ItemStack stack = new ItemStack(ModItems.DOOM_OMEN.get());
-        ChatFormatting nameColor = event.isMajor() ? ChatFormatting.DARK_RED : ChatFormatting.GOLD;
-        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("item.impendingdoom.doom_omen.named", event.displayName())
-                .withStyle(s -> s.withItalic(false).withColor(nameColor)));
-        List<Component> lore = List.of(
-                Component.translatable("omen.impendingdoom.arrives", arrivalDay + 1)
-                        .withStyle(s -> s.withItalic(false).withColor(ChatFormatting.GRAY)));
-        stack.set(DataComponents.LORE, new ItemLore(lore));
-        CompoundTag tag = new CompoundTag();
-        tag.putString("event", event.id());
-        tag.putLong("day", arrivalDay);
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-        return stack;
-    }
-
-    public static void giveOmen(ServerPlayer player, DoomSavedData d) {
-        DoomEvent next = EventRegistry.get(d.nextEvent);
-        if (next == null) return;
-        ItemStack omen = createOmen(next, nextEventDay((ServerLevel) player.level(), d));
-        if (!player.getInventory().add(omen)) EventUtil.dropNear(player, omen);
-        player.getPersistentData().putInt(OMEN_KEY, d.omenSerial);
     }
 
     /** The only notification players get: the event's name when it begins. */
@@ -380,7 +345,8 @@ public final class EventScheduler {
     public static void sync(ServerPlayer player, DoomSavedData d) {
         int flags = WinterEvent.blizzard() ? DoomStatePayload.BLIZZARD : 0;
         PacketDistributor.sendToPlayer(player, new DoomStatePayload(d.currentMinor, d.currentMajor, d.currentSeason,
-                SummerEvent.thirst(player), UnstableEvent.intensity(), flags));
+                SummerEvent.thirst(player), UnstableEvent.intensity(), flags, d.nextEvent,
+                d.nextEvent.isEmpty() ? -1 : nextEventDay(((ServerLevel) player.level()).getServer().overworld(), d), NextEventHudSettings.packed(player)));
     }
 
     @SubscribeEvent
@@ -388,9 +354,6 @@ public final class EventScheduler {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         DoomSavedData d = cached;
         if (d == null) return;
-        if (!d.nextEvent.isEmpty() && player.getPersistentData().getIntOr(OMEN_KEY, -1) != d.omenSerial) {
-            giveOmen(player, d);
-        }
         DoomEvent minor = EventRegistry.get(d.currentMinor);
         if (minor != null) minor.onPlayerJoin(player, d.minorData);
         DoomEvent season = EventRegistry.get(d.currentSeason);

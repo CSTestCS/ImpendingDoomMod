@@ -25,24 +25,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * Summer (season 1/4): heavy armor can only be worn for a short time during the day before the wearer overheats and
- * tears it off (no limit at night). Players must also manage thirst: drink bottles, milk, honey, soups and juicy
+ * Summer (season 1/4): players must manage thirst. Heavy armor makes you thirsty faster, rain stops thirst from
+ * dropping, and swimming fully underwater slowly hydrates you. Players: drink bottles, milk, honey, soups and juicy
  * fruit, sneak while looking at water with an empty hand, or look up at the rain while sneaking.
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public class SummerEvent extends DoomEvent {
     public static final String ID = "summer";
     public static final int MAX_THIRST = 20;
-    private static final int MAX_HEAT = 2400;
     private static final String THIRST = "impendingdoom_thirst";
     private static final String THIRST_EX = "impendingdoom_thirst_ex";
-    private static final String HEAT = "impendingdoom_heat";
 
     public SummerEvent() {
         super(ID, true, ChatFormatting.GOLD);
@@ -71,7 +70,6 @@ public class SummerEvent extends DoomEvent {
     public void onEnd(ServerLevel level, CompoundTag data) {
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             setThirst(player, MAX_THIRST);
-            player.getPersistentData().putInt(HEAT, 0);
         }
     }
 
@@ -80,8 +78,14 @@ public class SummerEvent extends DoomEvent {
         if (!(event.getEntity() instanceof ServerPlayer player) || !EventScheduler.isActive(ID)) return;
         if (player.isCreative() || player.isSpectator()) return;
         ServerLevel level = (ServerLevel) player.level();
-        tickHeat(level, player);
         tickThirst(level, player);
+    }
+
+    /** It is raining where the player is (sheltered or not). */
+    private static boolean rainingOn(ServerLevel level, Player player) {
+        if (!level.isRaining()) return false;
+        BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, player.blockPosition());
+        return level.isRainingAt(top.above());
     }
 
     private static int heavyPieces(Player player) {
@@ -90,41 +94,28 @@ public class SummerEvent extends DoomEvent {
         return n;
     }
 
-    private static void tickHeat(ServerLevel level, ServerPlayer player) {
-        CompoundTag tag = player.getPersistentData();
-        int heat = tag.getIntOr(HEAT, 0);
-        int heavy = heavyPieces(player);
-        boolean day = DayClock.isDay(level) && level.dimensionType().hasSkyLight();
-        if (heavy > 0 && day) {
-            heat += heavy + (level.canSeeSky(player.blockPosition().above()) ? 1 : 0);
-        } else {
-            heat = Math.max(0, heat - 6);
-        }
-        if (heat >= MAX_HEAT) {
-            for (EquipmentSlot slot : GearUtil.ARMOR_SLOTS) {
-                ItemStack stack = player.getItemBySlot(slot);
-                if (!stack.is(ModTags.HEAVY_ARMOR)) continue;
-                player.setItemSlot(slot, ItemStack.EMPTY);
-                if (!player.getInventory().add(stack)) EventUtil.dropNear(player, stack);
-            }
-            player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 200, 1));
-            player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 160, 0));
-            level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.8F, 0.6F);
-            heat = MAX_HEAT / 2;
-        }
-        tag.putInt(HEAT, heat);
-    }
-
     private static void tickThirst(ServerLevel level, ServerPlayer player) {
         CompoundTag tag = player.getPersistentData();
         float ex = tag.getFloatOr(THIRST_EX, 0);
-        ex += 0.0035F;
-        if (player.isSprinting()) ex += 0.03F;
-        if (DayClock.isDay(level) && level.canSeeSky(player.blockPosition().above())) ex += 0.004F;
-        if (level.getBiome(player.blockPosition()).value().getBaseTemperature() > 1.0F) ex += 0.004F;
         int thirst = thirst(player);
-        if (ex >= 4.0F) {
-            ex -= 4.0F;
+        boolean day = DayClock.isDay(level);
+        // Fully submerged in water: hydrates slowly.
+        if (player.isUnderWater() && player.isInWater()) {
+            if (player.tickCount % 30 == 0 && thirst < MAX_THIRST) {
+                thirst++;
+                setThirst(player, thirst);
+            }
+            ex = 0;
+        } else if (!rainingOn(level, player)) {
+            // Rain stops thirst from dropping. Heavy armor makes you thirsty much faster.
+            ex += 0.0035F;
+            if (player.isSprinting()) ex += 0.03F;
+            if (day && level.canSeeSky(player.blockPosition().above())) ex += 0.004F;
+            if (level.getBiome(player.blockPosition()).value().getBaseTemperature() > 1.0F) ex += 0.004F;
+            ex += heavyPieces(player) * (day ? 0.002F : 0.001F);
+        }
+        if (ex >= 8.0F) {
+            ex -= 8.0F;
             thirst = Math.max(0, thirst - 1);
             setThirst(player, thirst);
         }

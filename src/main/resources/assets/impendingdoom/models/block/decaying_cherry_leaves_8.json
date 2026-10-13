@@ -1,0 +1,9 @@
+{
+  "parent": "impendingdoom:block/decaying_template_none_8",
+  "textures": {
+    "top": "minecraft:block/cherry_leaves",
+    "side": "minecraft:block/cherry_leaves",
+    "bottom": "minecraft:block/cherry_leaves"
+  },
+  "render_type": "minecraft:cutout_mipped"
+}

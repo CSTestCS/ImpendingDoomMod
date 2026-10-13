@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "impendingdoom:block/decaying_podzol_2"
+    },
+    "layers=2": {
+      "model": "impendingdoom:block/decaying_podzol_4"
+    },
+    "layers=3": {
+      "model": "impendingdoom:block/decaying_podzol_6"
+    },
+    "layers=4": {
+      "model": "impendingdoom:block/decaying_podzol_8"
+    },
+    "layers=5": {
+      "model": "impendingdoom:block/decaying_podzol_10"
+    },
+    "layers=6": {
+      "model": "impendingdoom:block/decaying_podzol_12"
+    },
+    "layers=7": {
+      "model": "impendingdoom:block/decaying_podzol_14"
+    },
+    "layers=8": {
+      "model": "impendingdoom:block/decaying_podzol_16"
+    }
+  }
+}

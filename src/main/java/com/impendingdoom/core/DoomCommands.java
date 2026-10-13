@@ -14,6 +14,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -22,9 +23,11 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * /impendingdoom status                   - show current/next events
  * /impendingdoom list                     - list all events
  * /impendingdoom trigger [event]          - start the next (or given) event right now
- * /impendingdoom next &lt;event&gt;       - choose the next event (re-issues omens); "foretell" is an alias
+ * /impendingdoom next &lt;event&gt;       - choose the next event (shown on the HUD); "foretell" is an alias
  * /impendingdoom disable|enable &lt;event&gt; - stop an event from ever being chosen (or allow it again)
  * /impendingdoom disabled                 - list disabled events
+ * /impendingdoom hud show|hide|toggle|reset - the next event HUD (for yourself)
+ * /impendingdoom hud position &lt;anchor&gt; [x] [y] - move the next event HUD
  * /impendingdoom end minor|major          - end the running event
  * /impendingdoom days &lt;n&gt;           - same as /gamerule impendingdoom:days_between_events
  * /impendingdoom minors &lt;n&gt;         - same as /gamerule impendingdoom:minor_events_before_major
@@ -32,6 +35,8 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public final class DoomCommands {
     private static final SimpleCommandExceptionType NOT_READY = new SimpleCommandExceptionType(Component.literal("Impending Doom is not running"));
+    private static final SimpleCommandExceptionType BAD_ANCHOR = new SimpleCommandExceptionType(Component.literal(
+            "Anchor must be one of " + String.join(", ", NextEventHudSettings.ANCHORS)));
     private static final SimpleCommandExceptionType UNKNOWN = new SimpleCommandExceptionType(Component.literal("Unknown event"));
 
     private DoomCommands() {}
@@ -60,6 +65,19 @@ public final class DoomCommands {
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
                                 .executes(ctx -> setEnabled(ctx, true))))
                 .then(Commands.literal("disabled").executes(DoomCommands::listDisabled))
+                .then(Commands.literal("hud")
+                        .then(Commands.literal("show").executes(ctx -> hud(ctx, 0)))
+                        .then(Commands.literal("hide").executes(ctx -> hud(ctx, 1)))
+                        .then(Commands.literal("toggle").executes(ctx -> hud(ctx, 2)))
+                        .then(Commands.literal("reset").executes(ctx -> hud(ctx, 3)))
+                        .then(Commands.literal("position")
+                                .then(Commands.argument("anchor", StringArgumentType.word())
+                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggest(NextEventHudSettings.ANCHORS, b))
+                                        .executes(ctx -> hudPosition(ctx, 4, 4))
+                                        .then(Commands.argument("x", IntegerArgumentType.integer(-10000, 10000))
+                                                .then(Commands.argument("y", IntegerArgumentType.integer(-10000, 10000))
+                                                        .executes(ctx -> hudPosition(ctx, IntegerArgumentType.getInteger(ctx, "x"),
+                                                                IntegerArgumentType.getInteger(ctx, "y"))))))))
                 .then(Commands.literal("foretell").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("event", StringArgumentType.word())
                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(EventRegistry.ids(), b))
@@ -167,6 +185,34 @@ public final class DoomCommands {
         }
         for (String id : d.disabled) ctx.getSource().sendSuccess(() -> name(id), false);
         return d.disabled.size();
+    }
+
+    private static int hud(CommandContext<CommandSourceStack> ctx, int action) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        switch (action) {
+            case 0 -> NextEventHudSettings.setHidden(player, false);
+            case 1 -> NextEventHudSettings.setHidden(player, true);
+            case 2 -> NextEventHudSettings.setHidden(player, !NextEventHudSettings.hidden(player));
+            default -> NextEventHudSettings.reset(player);
+        }
+        boolean hidden = NextEventHudSettings.hidden(player);
+        DoomSavedData d = EventScheduler.data();
+        if (d != null) EventScheduler.sync(player, d);
+        ctx.getSource().sendSuccess(() -> Component.literal(action == 3 ? "Next event HUD reset" : hidden ? "Next event HUD hidden" : "Next event HUD shown"), false);
+        return 1;
+    }
+
+    private static int hudPosition(CommandContext<CommandSourceStack> ctx, int x, int y) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(ctx, "anchor");
+        int anchor = NextEventHudSettings.anchorIndex(name);
+        if (anchor < 0) throw BAD_ANCHOR.create();
+        NextEventHudSettings.setPosition(player, anchor, x, y);
+        NextEventHudSettings.setHidden(player, false);
+        DoomSavedData d = EventScheduler.data();
+        if (d != null) EventScheduler.sync(player, d);
+        ctx.getSource().sendSuccess(() -> Component.literal("Next event HUD moved to " + name + " (" + x + ", " + y + ")"), false);
+        return 1;
     }
 
     private static int end(CommandContext<CommandSourceStack> ctx, boolean major) throws CommandSyntaxException {

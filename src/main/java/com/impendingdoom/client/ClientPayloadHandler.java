@@ -16,6 +16,9 @@ public final class ClientPayloadHandler {
         ClientDoomState.blizzard = (payload.flags() & DoomStatePayload.BLIZZARD) != 0;
         ClientDoomState.thirst = payload.thirst();
         ClientDoomState.quake = payload.quake();
+        ClientDoomState.next = payload.next();
+        ClientDoomState.nextDay = payload.nextDay();
+        ClientDoomState.hud = payload.hud();
         boolean isFall = ActiveEvents.clientActive(FallEvent.ID);
         if (wasFall != isFall) redrawNearbyChunks();
     }

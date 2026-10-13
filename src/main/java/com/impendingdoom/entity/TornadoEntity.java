@@ -136,7 +136,7 @@ public class TornadoEntity extends Entity {
             else if (roll < 92) type = ParticleTypes.GUST;
             else if (roll < 97) type = ParticleTypes.LARGE_SMOKE;
             else type = ParticleTypes.EXPLOSION;
-            level.addAlwaysVisibleParticle(type, x, y, z, tx, 0.04 + r.nextDouble() * 0.12, tz);
+            level.addAlwaysVisibleParticle(type, true, x, y, z, tx, 0.04 + r.nextDouble() * 0.12, tz);
         }
         // Debris spray around the base
         BlockState ground = level.getBlockState(blockPosition().below());
@@ -144,12 +144,12 @@ public class TornadoEntity extends Entity {
             for (int i = 0; i < 12; i++) {
                 double a = r.nextDouble() * Math.PI * 2;
                 double d = BASE_RADIUS + r.nextDouble() * 5;
-                level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground), getX() + Math.cos(a) * d, getY() + 0.3, getZ() + Math.sin(a) * d,
+                level.addAlwaysVisibleParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground), true, getX() + Math.cos(a) * d, getY() + 0.3, getZ() + Math.sin(a) * d,
                         -Math.sin(a) * 0.6, 0.4 + r.nextDouble() * 0.5, Math.cos(a) * 0.6);
             }
         }
         if (tickCount % 4 == 0) {
-            level.addAlwaysVisibleParticle(ParticleTypes.EXPLOSION,
+            level.addAlwaysVisibleParticle(ParticleTypes.EXPLOSION, true,
                     getX() + (r.nextDouble() - 0.5) * 4, getY() + r.nextDouble() * 3, getZ() + (r.nextDouble() - 0.5) * 4, 0, 0, 0);
         }
     }
@@ -232,7 +232,9 @@ public class TornadoEntity extends Entity {
             if (Math.abs(top.getY() - getY()) > 6) continue;
             BlockState state = level.getBlockState(top);
             if (!EventUtil.isBreakable(level, top, state, 2.5F) || !state.getFluidState().isEmpty()) continue;
-            FallingBlockEntity fb = FallingBlockEntity.fall(level, top, state);
+            // Natural blocks are thrown as decaying copies that wear away over two days.
+            BlockState decaying = com.impendingdoom.block.DecayingBlocks.decayingOf(state);
+            FallingBlockEntity fb = FallingBlockEntity.fall(level, top, decaying != null ? decaying : state);
             fb.setDeltaMovement((random.nextDouble() - 0.5) * 0.5, 0.9 + random.nextDouble() * 0.6, (random.nextDouble() - 0.5) * 0.5);
             fb.needsSync = true;
         }

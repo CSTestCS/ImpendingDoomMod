@@ -5,12 +5,11 @@ import com.impendingdoom.config.DoomConfig;
 import com.impendingdoom.core.DayClock;
 import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.core.EventScheduler;
-import com.impendingdoom.entity.ai.MoveToPosGoal;
 import com.impendingdoom.util.EventUtil;
+import com.impendingdoom.util.GroupWander;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -26,14 +25,14 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import java.util.UUID;
 
 /**
- * Hordes: every night a large group of one random hostile mob spawns near each player and migrates toward them.
- * While any member lives, the horde calls reinforcements like zombies do.
+ * Hordes: every night large groups of one random hostile mob spawn around each player and roam like patrols. A horde
+ * attacks players it comes across, and while the event lasts its members call reinforcements like zombies do. Horde
+ * members are the only mobs from this mod that can call for backup.
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
 public class HordesEvent extends DoomEvent {
     public static final String ID = "hordes";
     private static final String HORDE = "impendingdoom_horde";
-    private static final String PREY = "impendingdoom_horde_prey";
     private static final String TAG = "impendingdoom.horde";
 
     public HordesEvent() {
@@ -57,48 +56,42 @@ public class HordesEvent extends DoomEvent {
                 }
             }
         }
-        if (level.getGameTime() % 100 == 0) {
-            for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG) && m.getTarget() == null)) {
-                UUID prey = EventUtil.uuid(m.getPersistentData(), PREY);
-                Player p = prey == null ? null : level.getPlayerByUUID(prey);
-                if (p != null && !p.isSpectator() && m.distanceToSqr(p) < 24 * 24) m.setTarget(p);
-            }
-        }
     }
 
     private static void spawnHorde(ServerLevel level, ServerPlayer player) {
         EntityType<?> type = DoomConfig.randomType(DoomConfig.HORDE_MOBS, level.getRandom());
         int min = DoomConfig.HORDE_MIN_SIZE.get();
         int size = min + level.getRandom().nextInt(Math.max(1, DoomConfig.HORDE_MAX_SIZE.get() - min + 1));
-        BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 40, 56, level.getRandom());
+        BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 28, 48, level.getRandom());
         if (origin == null) return;
         String hordeId = UUID.randomUUID().toString();
         for (int i = 0; i < size; i++) {
             BlockPos pos = EventUtil.surfacePos(level, origin, 0, 5, level.getRandom());
-            joinHorde(level, EventUtil.spawn(level, type, pos == null ? origin : pos), hordeId, player.getUUID());
+            joinHorde(EventUtil.spawn(level, type, pos == null ? origin : pos), hordeId);
         }
     }
 
-    private static void joinHorde(ServerLevel level, Entity entity, String hordeId, UUID prey) {
+    private static void joinHorde(Entity entity, String hordeId) {
         if (!(entity instanceof Mob mob)) return;
         mob.addTag(TAG);
         mob.getPersistentData().putString(HORDE, hordeId);
-        mob.getPersistentData().putString(PREY, prey.toString());
         mob.setPersistenceRequired();
-        addMigration(mob);
+        EventUtil.allowReinforcements(mob);
+        GroupWander.join(mob, hordeId);
     }
 
-    private static void addMigration(Mob mob) {
-        mob.goalSelector.addGoal(4, new MoveToPosGoal(mob, () -> {
-            UUID prey = EventUtil.uuid(mob.getPersistentData(), PREY);
-            Player p = prey == null ? null : mob.level().getPlayerByUUID(prey);
-            return p == null ? null : p.blockPosition();
-        }, 1.0, 8));
-    }
-
+    /** Outside the event, leftover horde members are ordinary mobs: no more backup. */
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob m && m.entityTags().contains(TAG)) addMigration(m);
+        if (!event.getLevel().isClientSide() && event.loadedFromDisk() && event.getEntity() instanceof Mob m
+                && m.entityTags().contains(TAG) && !EventScheduler.isActive(ID)) {
+            EventUtil.noReinforcements(m);
+        }
+    }
+
+    @Override
+    public void onEnd(ServerLevel level, CompoundTag data) {
+        for (Mob m : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.entityTags().contains(TAG))) EventUtil.noReinforcements(m);
     }
 
     /** Zombie-style reinforcements: a hurt member may call another of its kind. */
@@ -109,12 +102,11 @@ public class HordesEvent extends DoomEvent {
         String hordeId = mob.getPersistentData().getStringOr(HORDE, "");
         long size = level.getEntities(EntityTypeTest.forClass(Mob.class), m -> hordeId.equals(m.getPersistentData().getStringOr(HORDE, ""))).size();
         if (size >= 40) return;
-        UUID prey = EventUtil.uuid(mob.getPersistentData(), PREY);
         BlockPos pos = EventUtil.surfacePos(level, mob.blockPosition(), 7, 16, level.getRandom());
-        if (pos == null || prey == null) return;
+        if (pos == null) return;
         EventUtil.defer(() -> {
             Entity e = EventUtil.spawn(level, mob.getType(), pos);
-            joinHorde(level, e, hordeId, prey);
+            joinHorde(e, hordeId);
             if (e instanceof Mob m && event.getSource().getEntity() instanceof Player p) m.setTarget(p);
         });
     }

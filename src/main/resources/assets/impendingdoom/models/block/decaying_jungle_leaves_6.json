@@ -1,0 +1,9 @@
+{
+  "parent": "impendingdoom:block/decaying_template_all_6",
+  "textures": {
+    "top": "minecraft:block/jungle_leaves",
+    "side": "minecraft:block/jungle_leaves",
+    "bottom": "minecraft:block/jungle_leaves"
+  },
+  "render_type": "minecraft:cutout_mipped"
+}

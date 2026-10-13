@@ -6,6 +6,8 @@ import com.impendingdoom.core.EventScheduler;
 import com.impendingdoom.entity.NetherflameBottle;
 import com.impendingdoom.registry.ModItems;
 import com.impendingdoom.util.EventUtil;
+import com.impendingdoom.util.GroupWander;
+import com.impendingdoom.util.MobSight;
 import com.impendingdoom.util.GearUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -171,6 +173,8 @@ public class NetherInvasionEvent extends DoomEvent {
 
     private static void spawnGroup(ServerLevel level, BlockPos portal, RandomSource r) {
         int size = 4 + r.nextInt(5);
+        // Each party roams together like a patrol.
+        String party = java.util.UUID.randomUUID().toString();
         for (int i = 0; i < size; i++) {
             BlockPos pos = EventUtil.surfacePos(level, portal, 1, 4, r);
             if (pos == null) pos = portal;
@@ -180,27 +184,32 @@ public class NetherInvasionEvent extends DoomEvent {
                 Entity g = EventUtil.spawn(level, EntityTypes.GHAST, pos.above(6));
                 if (g instanceof Ghast ghast) {
                     invader(ghast);
+                    GroupWander.join(ghast, party);
                     // Purely cosmetic: rendered by GhastHarnessLayer, never dropped.
                     GearUtil.equip(ghast, EquipmentSlot.BODY, new ItemStack(Items.HARNESS.red()), 0.0F);
                     AbstractPiglin rider = piglin(level, pos, r, false);
                     if (rider != null) {
                         armRider(rider, r);
                         rider.startRiding(ghast, true, true);
+                        GroupWander.join(rider, party);
                     }
                 }
             } else if (roll < 5) {
                 Entity h = EventUtil.spawn(level, EntityTypes.HOGLIN, pos);
                 if (h instanceof Hoglin hoglin) {
                     invader(hoglin);
+                    GroupWander.join(hoglin, party);
                     hoglin.setImmuneToZombification(true);
                     AbstractPiglin rider = piglin(level, pos, r, false);
                     if (rider != null) {
                         armRider(rider, r);
                         rider.startRiding(hoglin, true, true);
+                        GroupWander.join(rider, party);
                     }
                 }
             } else {
-                piglin(level, pos, r, roll < 9);
+                AbstractPiglin piglin = piglin(level, pos, r, roll < 9);
+                if (piglin != null) GroupWander.join(piglin, party);
             }
         }
     }
@@ -233,11 +242,19 @@ public class NetherInvasionEvent extends DoomEvent {
     private static void behave(ServerLevel level, Mob mob, RandomSource r) {
         if (!(mob instanceof AbstractPiglin piglin)) return;
         LivingEntity target = mob.getTarget();
+        // A player that got away (or turned invisible) is forgotten.
+        if (target instanceof Player p && (mob.distanceToSqr(p) > 48 * 48 || MobSight.hiddenFrom(mob, p))) {
+            piglin.setTarget(null);
+            piglin.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+            piglin.getBrain().eraseMemory(MemoryModuleType.ANGRY_AT);
+            target = null;
+        }
         if (target == null || !target.isAlive()) {
-            // Hostile to players; otherwise hunts passive mobs the way piglins hunt hoglins.
-            target = level.getNearestPlayer(mob.getX(), mob.getY(), mob.getZ(), 32, p -> !((Player) p).isCreative() && !p.isSpectator());
+            // Hostile to players it sees; otherwise hunts passive mobs it sees, the way piglins hunt hoglins.
+            target = MobSight.nearestVisiblePlayer(level, mob, 24);
             if (target == null) {
-                List<Animal> prey = level.getEntitiesOfClass(Animal.class, mob.getBoundingBox().inflate(24), a -> !a.entityTags().contains(TAG));
+                List<Animal> prey = level.getEntitiesOfClass(Animal.class, mob.getBoundingBox().inflate(20),
+                        a -> !a.entityTags().contains(TAG) && mob.hasLineOfSight(a));
                 if (!prey.isEmpty()) target = prey.get(r.nextInt(prey.size()));
             }
             if (target != null) {

@@ -51,6 +51,10 @@ public final class ModBlocks {
     public static final DeferredHolder<Block, Block> UNLIT_SOUL_LANTERN = register("unlit_soul_lantern", p -> new UnlitLanternBlock(p, () -> Blocks.SOUL_LANTERN),
             p -> p.mapColor(MapColor.METAL).forceSolidOn().strength(3.5F).sound(SoundType.LANTERN).noOcclusion());
 
+    static {
+        com.impendingdoom.block.DecayingBlocks.registerAll();
+    }
+
     private ModBlocks() {}
 
     private static DeferredHolder<Block, Block> register(String name, Function<BlockBehaviour.Properties, ? extends Block> factory,

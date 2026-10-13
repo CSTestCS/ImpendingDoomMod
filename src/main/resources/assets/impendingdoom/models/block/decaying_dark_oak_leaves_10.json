@@ -1,0 +1,9 @@
+{
+  "parent": "impendingdoom:block/decaying_template_all_10",
+  "textures": {
+    "top": "minecraft:block/dark_oak_leaves",
+    "side": "minecraft:block/dark_oak_leaves",
+    "bottom": "minecraft:block/dark_oak_leaves"
+  },
+  "render_type": "minecraft:cutout_mipped"
+}

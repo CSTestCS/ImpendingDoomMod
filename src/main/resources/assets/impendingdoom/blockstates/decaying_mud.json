@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "impendingdoom:block/decaying_mud_2"
+    },
+    "layers=2": {
+      "model": "impendingdoom:block/decaying_mud_4"
+    },
+    "layers=3": {
+      "model": "impendingdoom:block/decaying_mud_6"
+    },
+    "layers=4": {
+      "model": "impendingdoom:block/decaying_mud_8"
+    },
+    "layers=5": {
+      "model": "impendingdoom:block/decaying_mud_10"
+    },
+    "layers=6": {
+      "model": "impendingdoom:block/decaying_mud_12"
+    },
+    "layers=7": {
+      "model": "impendingdoom:block/decaying_mud_14"
+    },
+    "layers=8": {
+      "model": "impendingdoom:block/decaying_mud_16"
+    }
+  }
+}

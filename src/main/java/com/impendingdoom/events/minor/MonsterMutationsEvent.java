@@ -150,6 +150,7 @@ public class MonsterMutationsEvent extends DoomEvent {
                         if (!(e instanceof Mob child)) return;
                         child.setPos(dead.getX() + level.getRandom().nextGaussian() * 0.5, dead.getY(), dead.getZ() + level.getRandom().nextGaussian() * 0.5);
                         child.addTag(TAG);
+                        EventUtil.noReinforcements(child);
                         child.getPersistentData().putBoolean("impendingdoom_split", true);
                         EventUtil.addModifier(child, Attributes.SCALE, "mutation_scale", -0.45, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
                         EventUtil.addModifier(child, Attributes.MAX_HEALTH, "mutation_health", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);

@@ -202,6 +202,9 @@ public class HuntedEvent extends DoomEvent {
 
     private static void tagHunter(Mob mob, UUID owner, int slot, int gen) {
         mob.addTag(TAG);
+        // Hunters always seek their target out.
+        mob.addTag(com.impendingdoom.util.MobSight.SEEKER);
+        EventUtil.noReinforcements(mob);
         mob.getPersistentData().putString(OWNER, owner.toString());
         mob.getPersistentData().putInt(SLOT, slot);
         mob.getPersistentData().putInt(GEN, gen);

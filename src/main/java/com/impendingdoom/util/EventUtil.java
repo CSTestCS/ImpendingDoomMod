@@ -119,10 +119,24 @@ public final class EventUtil {
         entity.setYRot(level.getRandom().nextFloat() * 360.0F);
         if (entity instanceof Mob mob) {
             mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.EVENT, null);
+            mob.addTag(MobSight.EVENT_MOB);
+            // Only horde members may call reinforcements (see HordesEvent).
+            noReinforcements(mob);
         }
         level.addFreshEntityWithPassengers(entity);
         if (entity instanceof Creaking creaking) CreakingCompanions.attach(level, creaking);
         return entity;
+    }
+
+    /** Stops zombies' vanilla "call for backup" behavior. */
+    public static void noReinforcements(Mob mob) {
+        addModifier(mob, net.minecraft.world.entity.ai.attributes.Attributes.SPAWN_REINFORCEMENTS_CHANCE, "no_reinforcements", -1.0,
+                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+    }
+
+    public static void allowReinforcements(Mob mob) {
+        AttributeInstance inst = mob.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SPAWN_REINFORCEMENTS_CHANCE);
+        if (inst != null) inst.removeModifier(com.impendingdoom.ImpendingDoom.id("no_reinforcements"));
     }
 
     public static void addModifier(LivingEntity entity, Holder<Attribute> attribute, String name, double amount, AttributeModifier.Operation op) {

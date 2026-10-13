@@ -1,0 +1,9 @@
+{
+  "parent": "impendingdoom:block/decaying_template_all_8",
+  "textures": {
+    "top": "minecraft:block/acacia_leaves",
+    "side": "minecraft:block/acacia_leaves",
+    "bottom": "minecraft:block/acacia_leaves"
+  },
+  "render_type": "minecraft:cutout_mipped"
+}

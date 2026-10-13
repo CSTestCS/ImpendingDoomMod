@@ -1,6 +1,17 @@
 {
   "values": [
     "impendingdoom:unlit_lantern",
-    "impendingdoom:unlit_soul_lantern"
+    "impendingdoom:unlit_soul_lantern",
+    "impendingdoom:decaying_stone",
+    "impendingdoom:decaying_granite",
+    "impendingdoom:decaying_diorite",
+    "impendingdoom:decaying_andesite",
+    "impendingdoom:decaying_tuff",
+    "impendingdoom:decaying_calcite",
+    "impendingdoom:decaying_terracotta",
+    "impendingdoom:decaying_netherrack",
+    "impendingdoom:decaying_end_stone",
+    "impendingdoom:decaying_sandstone",
+    "impendingdoom:decaying_red_sandstone"
   ]
 }

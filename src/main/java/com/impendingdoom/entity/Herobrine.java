@@ -254,7 +254,11 @@ public class Herobrine extends PathfinderMob {
                     && com.impendingdoom.util.CreakingCompanions.heartOf(level, creaking) == null) {
                 com.impendingdoom.util.CreakingCompanions.attach(level, creaking);
             }
-            if (mob instanceof Mob m) m.setTarget(watched);
+            if (mob instanceof Mob m) {
+                // Summoned straight at Herobrine's victim.
+                m.addTag(com.impendingdoom.util.MobSight.SEEKER);
+                m.setTarget(watched);
+            }
             level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 20, 0.3, 0.6, 0.3, 0.02);
         }
     }

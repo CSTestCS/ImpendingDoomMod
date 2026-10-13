@@ -1,6 +1,18 @@
 {
   "values": [
     "impendingdoom:fallen_leaves",
-    "impendingdoom:leaf_pile"
+    "impendingdoom:leaf_pile",
+    "impendingdoom:decaying_moss_block",
+    "impendingdoom:decaying_oak_leaves",
+    "impendingdoom:decaying_spruce_leaves",
+    "impendingdoom:decaying_birch_leaves",
+    "impendingdoom:decaying_jungle_leaves",
+    "impendingdoom:decaying_acacia_leaves",
+    "impendingdoom:decaying_dark_oak_leaves",
+    "impendingdoom:decaying_mangrove_leaves",
+    "impendingdoom:decaying_cherry_leaves",
+    "impendingdoom:decaying_pale_oak_leaves",
+    "impendingdoom:decaying_azalea_leaves",
+    "impendingdoom:decaying_flowering_azalea_leaves"
   ]
 }

@@ -91,24 +91,6 @@ def heart_walker():
     png(f"{OUT}/entity/heart_walker.png", 64, 32, img)
 
 
-def omen():
-    r = random.Random(3)
-    img = canvas(16, 16)
-    paper, edge, ink = (226, 214, 180, 255), (150, 120, 80, 255), (120, 10, 20, 255)
-    rect(img, 3, 2, 10, 12, paper, 10, r)
-    for y in range(2, 14):
-        img[y][3] = edge
-        img[y][12] = edge
-    rect(img, 2, 1, 12, 2, edge, 8, r)
-    rect(img, 2, 13, 12, 2, edge, 8, r)
-    # A red eye sigil
-    for (x, y) in [(6, 6), (7, 5), (8, 5), (9, 6), (6, 8), (7, 9), (8, 9), (9, 8), (5, 7), (10, 7)]:
-        img[y][x] = ink
-    img[7][7] = (20, 0, 0, 255)
-    img[7][8] = (20, 0, 0, 255)
-    png(f"{OUT}/item/doom_omen.png", 16, 16, img)
-
-
 def netherflame():
     r = random.Random(4)
     img = canvas(16, 16)
@@ -178,7 +160,6 @@ def effect(name, color, symbol):
 if __name__ == "__main__":
     herobrine()
     heart_walker()
-    omen()
     netherflame()
     charged_glint()
     burnt_torch("burnt_torch", (40, 32, 28, 255))

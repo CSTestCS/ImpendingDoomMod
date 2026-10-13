@@ -2,6 +2,7 @@ package com.impendingdoom.client;
 
 import com.google.common.reflect.TypeToken;
 import com.impendingdoom.ImpendingDoom;
+import com.impendingdoom.block.DecayingBlocks;
 import com.impendingdoom.core.ActiveEvents;
 import com.impendingdoom.events.major.FallEvent;
 import com.impendingdoom.events.major.SummerEvent;
@@ -120,6 +121,29 @@ public final class ClientModEvents {
                 Blocks.OAK_LEAVES, Blocks.DARK_OAK_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.MANGROVE_LEAVES, Blocks.VINE);
         event.register(List.of(new LeafTint(0xFF80A755, false)), Blocks.BIRCH_LEAVES);
         event.register(List.of(new AutumnTint()), ModBlocks.FALLEN_LEAVES.get(), ModBlocks.LEAF_PILE.get());
+        // Decaying blocks thrown by tornadoes keep the tint of the block they came from.
+        for (DecayingBlocks.Entry e : DecayingBlocks.ALL) {
+            BlockTintSource tint = switch (e.tint()) {
+                case GRASS -> new GrassTint();
+                case FOLIAGE -> new LeafTint(0xFF48B518, true);
+                case BIRCH -> new LeafTint(0xFF80A755, false);
+                case SPRUCE -> new LeafTint(0xFF619961, false);
+                case NONE -> null;
+            };
+            if (tint != null) event.register(List.of(tint), e.holder().get());
+        }
+    }
+
+    private record GrassTint() implements BlockTintSource {
+        @Override
+        public int color(BlockState state) {
+            return 0xFF91BD59;
+        }
+
+        @Override
+        public int colorInWorld(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+            return BiomeColors.getAverageGrassColor(level, pos);
+        }
     }
 
     /** Biome foliage color normally (or a fixed color), autumn colors during Fall. */
@@ -157,6 +181,8 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void guiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, ImpendingDoom.id("thirst"), ThirstHud::render);
+        event.registerAbove(VanillaGuiLayers.CAMERA_OVERLAYS, ImpendingDoom.id("wool_blindness"), WoolBlindnessOverlay::render);
+        event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, ImpendingDoom.id("next_event"), NextEventHud::render);
     }
 
     static boolean summer() {

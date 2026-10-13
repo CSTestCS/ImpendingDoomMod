@@ -70,7 +70,7 @@ public class FallEvent extends DoomEvent {
         // Large groups of tiny spiders, day and night, every minute or so per player.
         if (time % 1200 == 0) {
             for (ServerPlayer player : EventUtil.targets(level)) {
-                if (r.nextInt(3) != 0) spawnTinyGroup(level, player, 8 + r.nextInt(9), r.nextBoolean());
+                if (r.nextInt(3) != 0) spawnTinyGroup(level, player, 8 + r.nextInt(9));
             }
         }
     }
@@ -110,6 +110,7 @@ public class FallEvent extends DoomEvent {
 
     private static void makeDecaying(Creeper creeper) {
         creeper.addTag(DECAYING);
+        creeper.addTag(com.impendingdoom.util.MobSight.SEEKER);
         creeper.setCustomName(net.minecraft.network.chat.Component.translatable("entity.impendingdoom.decaying_creeper"));
         EventUtil.addModifier(creeper, Attributes.FOLLOW_RANGE, "decaying_range", 128, AttributeModifier.Operation.ADD_VALUE);
         setupDecaying(creeper);
@@ -120,21 +121,23 @@ public class FallEvent extends DoomEvent {
         creeper.goalSelector.removeAllGoals(g -> g instanceof SwellGoal);
     }
 
-    /** A large horde of tiny spiders that comes straight for the player. */
+    /** A large horde of tiny spiders that roams with the other hordes. */
     public static void spawnTinySpiderHorde(ServerLevel level, ServerPlayer player) {
-        spawnTinyGroup(level, player, 14 + level.getRandom().nextInt(10), true);
+        spawnTinyGroup(level, player, 14 + level.getRandom().nextInt(10));
     }
 
-    private static void spawnTinyGroup(ServerLevel level, ServerPlayer player, int count, boolean attack) {
+    /** A pack of tiny spiders somewhere around the player. The pack roams together and attacks what it sees. */
+    private static void spawnTinyGroup(ServerLevel level, ServerPlayer player, int count) {
         RandomSource r = level.getRandom();
-        BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 16, 32, r);
+        BlockPos origin = EventUtil.surfacePos(level, player.blockPosition(), 24, 40, r);
         if (origin == null) return;
+        String pack = java.util.UUID.randomUUID().toString();
         for (int i = 0; i < count; i++) {
             BlockPos pos = EventUtil.surfacePos(level, origin, 0, 3, r);
             if (EventUtil.spawn(level, EntityTypes.SPIDER, pos == null ? origin : pos) instanceof Spider spider) {
                 makeTiny(spider);
                 spider.setPersistenceRequired();
-                if (attack) spider.setTarget(player);
+                com.impendingdoom.util.GroupWander.join(spider, pack);
             }
         }
     }

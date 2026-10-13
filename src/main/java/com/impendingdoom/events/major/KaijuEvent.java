@@ -81,6 +81,7 @@ public class KaijuEvent extends DoomEvent {
         if (!(e instanceof Mob mob)) return;
         double scale = Math.min(DoomConfig.KAIJU_SCALE.get(), KaijuScaling.maxScale());
         mob.addTag(TAG);
+        mob.addTag(com.impendingdoom.util.MobSight.SEEKER);
         mob.setPersistenceRequired();
         EventUtil.addModifier(mob, Attributes.SCALE, "kaiju_scale", scale - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         EventUtil.addModifier(mob, Attributes.MAX_HEALTH, "kaiju_health", 19.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);

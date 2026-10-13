@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_2"
+    },
+    "layers=2": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_4"
+    },
+    "layers=3": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_6"
+    },
+    "layers=4": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_8"
+    },
+    "layers=5": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_10"
+    },
+    "layers=6": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_12"
+    },
+    "layers=7": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_14"
+    },
+    "layers=8": {
+      "model": "impendingdoom:block/decaying_rooted_dirt_16"
+    }
+  }
+}

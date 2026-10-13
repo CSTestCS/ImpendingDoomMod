@@ -1,0 +1,8 @@
+{
+  "parent": "impendingdoom:block/decaying_template_none_12",
+  "textures": {
+    "top": "minecraft:block/mycelium_top",
+    "side": "minecraft:block/mycelium_side",
+    "bottom": "minecraft:block/dirt"
+  }
+}

@@ -69,6 +69,7 @@ public class SoulThievesEvent extends DoomEvent {
 
     private static void possess(Mob mob) {
         mob.addTag(TAG);
+        mob.addTag(com.impendingdoom.util.MobSight.SEEKER);
         mob.setPersistenceRequired();
         addGoals(mob);
     }

@@ -1,0 +1,9 @@
+{
+  "parent": "impendingdoom:block/decaying_template_none_8",
+  "textures": {
+    "top": "minecraft:block/flowering_azalea_leaves",
+    "side": "minecraft:block/flowering_azalea_leaves",
+    "bottom": "minecraft:block/flowering_azalea_leaves"
+  },
+  "render_type": "minecraft:cutout_mipped"
+}
