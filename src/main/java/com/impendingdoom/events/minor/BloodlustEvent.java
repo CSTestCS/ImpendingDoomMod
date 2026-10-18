@@ -83,7 +83,7 @@ public class BloodlustEvent extends DoomEvent {
     }
 
     private static void strike(ServerLevel level) {
-        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.isAlive() && !(m instanceof ArmorStand))) {
+        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), Mob::isAlive)) {
             if (level.getRandom().nextFloat() < CHANCE) haze(mob);
         }
     }
