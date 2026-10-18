@@ -19,6 +19,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -37,8 +38,8 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
- * Mortis's Bloodlust: every mob gets the Bloodlust Haze (red haze, shaking) - 2 minutes for hostile mobs, 5 for the
- * rest. If the haze runs out naturally the mob becomes bloodlusted: it stops shaking, blood drips from it, its eyes
+ * Mortis's Bloodlust: a few times a day, a random 30% of mobs get the Bloodlust Haze (red haze, shaking) - 2 minutes
+ * for hostile mobs, 5 for the rest. When the event ends, passive and neutral mobs recover. If the haze runs out naturally the mob becomes bloodlusted: it stops shaking, blood drips from it, its eyes
  * glow red, it attacks any mob it can find, and it grows bigger and stronger with every kill.
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
@@ -47,6 +48,8 @@ public class BloodlustEvent extends DoomEvent {
     public static final String TAG = "impendingdoom.bloodlusted";
     private static final int HOSTILE_DURATION = 2400;
     private static final int OTHER_DURATION = 6000;
+    /** Share of mobs each strike of the haze affects. */
+    private static final float CHANCE = 0.3F;
     private static final DustParticleOptions EYE = new DustParticleOptions(0xFF0000, 0.6F);
     private static final BlockParticleOption BLOOD = new BlockParticleOption(ParticleTypes.FALLING_DUST, Blocks.REDSTONE_BLOCK.defaultBlockState());
 
@@ -62,16 +65,67 @@ public class BloodlustEvent extends DoomEvent {
 
     @Override
     public void onStart(ServerLevel level, CompoundTag data) {
-        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), Entity::isAlive)) haze(mob);
+        strike(level);
+        scheduleNext(level, data);
+    }
+
+    /** A few times a day the haze falls on a random 30% of the mobs around. */
+    @Override
+    public void onTick(ServerLevel level, CompoundTag data) {
+        if (level.getGameTime() < data.getLongOr("next", 0L)) return;
+        strike(level);
+        scheduleNext(level, data);
+    }
+
+    private static void scheduleNext(ServerLevel level, CompoundTag data) {
+        // Three or four times per Minecraft day, at random.
+        data.putLong("next", level.getGameTime() + 5000 + level.getRandom().nextInt(4000));
+    }
+
+    private static void strike(ServerLevel level) {
+        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), m -> m.isAlive() && !(m instanceof ArmorStand))) {
+            if (level.getRandom().nextFloat() < CHANCE) haze(mob);
+        }
+    }
+
+    /** When the event ends, passive and neutral mobs come back to their senses. Hostile mobs stay bloodlusted. */
+    @Override
+    public void onEnd(ServerLevel level, CompoundTag data) {
+        for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), BloodlustEvent::recovers)) cure(mob);
+    }
+
+    private static boolean recovers(Mob mob) {
+        return !(mob instanceof Enemy) || mob instanceof NeutralMob;
+    }
+
+    private static void cure(Mob mob) {
+        if (!mob.entityTags().contains(TAG) && !mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
+        mob.removeEffect(ModEffects.BLOODLUST_HAZE);
+        mob.removeTag(TAG);
+        mob.goalSelector.removeAllGoals(g -> g instanceof BloodlustGoal);
+        mob.targetSelector.removeAllGoals(g -> g instanceof BloodlustGoal);
+        mob.setTarget(null);
+        mob.getPersistentData().remove("impendingdoom_kills");
+        for (var attr : java.util.List.of(Attributes.SCALE, Attributes.MAX_HEALTH, Attributes.ATTACK_DAMAGE)) {
+            var inst = mob.getAttribute(attr);
+            if (inst == null) continue;
+            inst.removeModifier(ImpendingDoom.id("bloodlust_scale"));
+            inst.removeModifier(ImpendingDoom.id("bloodlust_health"));
+            inst.removeModifier(ImpendingDoom.id("bloodlust_damage"));
+        }
+        if (mob.getHealth() > mob.getMaxHealth()) mob.setHealth(mob.getMaxHealth());
+        EntityMarks.update(mob);
     }
 
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel) || !(event.getEntity() instanceof Mob mob)) return;
-        if (mob.entityTags().contains(TAG)) {
+        if (!mob.entityTags().contains(TAG) && !mob.hasEffect(ModEffects.BLOODLUST_HAZE)) return;
+        // Passive and neutral mobs that were unloaded when the event ended recover when they load again.
+        if (!EventScheduler.isActive(ID) && recovers(mob)) {
+            EventUtil.defer(() -> cure(mob));
+        } else if (mob.entityTags().contains(TAG)) {
             addBloodlustGoals(mob);
-        } else if (!event.loadedFromDisk() && EventScheduler.isActive(ID)) {
-            EventUtil.defer(() -> haze(mob));
         }
     }
 
@@ -80,6 +134,7 @@ public class BloodlustEvent extends DoomEvent {
         MobEffectInstance instance = event.getEffectInstance();
         if (instance == null || !instance.is(ModEffects.BLOODLUST_HAZE)) return;
         if (!(event.getEntity() instanceof Mob mob) || mob.level().isClientSide()) return;
+        if (!EventScheduler.isActive(ID) && recovers(mob)) return;
         mob.addTag(TAG);
         mob.setPersistenceRequired();
         addBloodlustGoals(mob);
@@ -95,13 +150,34 @@ public class BloodlustEvent extends DoomEvent {
     }
 
     private static void addBloodlustGoals(Mob mob) {
-        mob.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(mob, LivingEntity.class, 10, true, false,
-                (target, level) -> target != mob && !(target instanceof ArmorStand) && !(target instanceof ServerPlayer p && (p.isCreative() || p.isSpectator()))));
+        mob.targetSelector.addGoal(0, new BloodlustTarget(mob));
         if (!(mob instanceof PathfinderMob pathfinder)) return;
         if (EventUtil.hasAttribute(mob, Attributes.ATTACK_DAMAGE) && !(mob instanceof Enemy)) {
-            mob.goalSelector.addGoal(1, new MeleeAttackGoal(pathfinder, 1.2, true));
+            mob.goalSelector.addGoal(1, new BloodlustMelee(pathfinder));
         } else if (!EventUtil.hasAttribute(mob, Attributes.ATTACK_DAMAGE)) {
-            mob.goalSelector.addGoal(1, new ForcedMeleeGoal(mob, 1.2, 3.0F));
+            mob.goalSelector.addGoal(1, new BloodlustForcedMelee(mob));
+        }
+    }
+
+    /** Marks the goals bloodlust adds, so they can be taken away again. */
+    private interface BloodlustGoal {}
+
+    private static final class BloodlustTarget extends NearestAttackableTargetGoal<LivingEntity> implements BloodlustGoal {
+        BloodlustTarget(Mob mob) {
+            super(mob, LivingEntity.class, 10, true, false, (target, level) -> target != mob && !(target instanceof ArmorStand)
+                    && !(target instanceof ServerPlayer p && (p.isCreative() || p.isSpectator())));
+        }
+    }
+
+    private static final class BloodlustMelee extends MeleeAttackGoal implements BloodlustGoal {
+        BloodlustMelee(PathfinderMob mob) {
+            super(mob, 1.2, true);
+        }
+    }
+
+    private static final class BloodlustForcedMelee extends ForcedMeleeGoal implements BloodlustGoal {
+        BloodlustForcedMelee(Mob mob) {
+            super(mob, 1.2, 3.0F);
         }
     }
 

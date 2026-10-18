@@ -313,6 +313,21 @@ public final class EventScheduler {
         syncAll(level, d);
     }
 
+    /** Day-time ticks left until the next event begins (it begins at the start of its day). */
+    public static long ticksUntilNext(ServerLevel level, DoomSavedData d) {
+        return Math.max(0, nextEventDay(level, d) * DayClock.DAY_LENGTH - DayClock.dayTime(level));
+    }
+
+    /** "2d 5h", "5h 30m", "30m": Minecraft time, 1 day = 24 hours of 1000 ticks. */
+    public static String formatTicks(long ticks) {
+        long days = ticks / DayClock.DAY_LENGTH;
+        long hours = ticks % DayClock.DAY_LENGTH / 1000;
+        long minutes = ticks % 1000 * 60 / 1000;
+        if (days > 0) return days + "d " + hours + "h";
+        if (hours > 0) return hours + "h " + minutes + "m";
+        return Math.max(1, minutes) + "m";
+    }
+
     public static long nextEventDay(ServerLevel level, DoomSavedData d) {
         return d.lastEventDay + ModGameRules.daysBetweenEvents(level);
     }
@@ -346,7 +361,7 @@ public final class EventScheduler {
         int flags = WinterEvent.blizzard() ? DoomStatePayload.BLIZZARD : 0;
         PacketDistributor.sendToPlayer(player, new DoomStatePayload(d.currentMinor, d.currentMajor, d.currentSeason,
                 SummerEvent.thirst(player), UnstableEvent.intensity(), flags, d.nextEvent,
-                d.nextEvent.isEmpty() ? -1 : nextEventDay(((ServerLevel) player.level()).getServer().overworld(), d), NextEventHudSettings.packed(player)));
+                d.nextEvent.isEmpty() ? -1 : ticksUntilNext(((ServerLevel) player.level()).getServer().overworld(), d)));
     }
 
     @SubscribeEvent

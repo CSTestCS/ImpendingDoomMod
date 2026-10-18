@@ -18,6 +18,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import com.impendingdoom.network.HudSettingsPayload;
 
 /**
  * /impendingdoom status                   - show current/next events
@@ -113,14 +115,15 @@ public final class DoomCommands {
         ServerLevel level = ctx.getSource().getServer().overworld();
         long day = DayClock.day(level);
         long next = EventScheduler.nextEventDay(level, d);
-        ctx.getSource().sendSuccess(() -> Component.literal("Day " + (day + 1) + " | events every "
+        long ticks = EventScheduler.ticksUntilNext(level, d);
+        ctx.getSource().sendSuccess(() -> Component.literal("Day " + day + " | events every "
                 + ModGameRules.daysBetweenEvents(level) + " days, " + ModGameRules.minorEventsBeforeMajor(level)
                 + " minor events before a major event"), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Minor event: ").append(name(d.currentMinor)), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Major event: ").append(name(d.currentMajor)), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Season: ").append(name(d.currentSeason)), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Next: ").append(name(d.nextEvent))
-                .append(Component.literal(" on day " + (next + 1) + " (in " + Math.max(0, next - day) + " days)")), false);
+                .append(Component.literal(" in " + EventScheduler.formatTicks(ticks) + " (day " + next + ")")), false);
         return 1;
     }
 
@@ -187,18 +190,17 @@ public final class DoomCommands {
         return d.disabled.size();
     }
 
+    /** HUD settings belong to the player's client and are saved in its config file. */
     private static int hud(CommandContext<CommandSourceStack> ctx, int action) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
-        switch (action) {
-            case 0 -> NextEventHudSettings.setHidden(player, false);
-            case 1 -> NextEventHudSettings.setHidden(player, true);
-            case 2 -> NextEventHudSettings.setHidden(player, !NextEventHudSettings.hidden(player));
-            default -> NextEventHudSettings.reset(player);
-        }
-        boolean hidden = NextEventHudSettings.hidden(player);
-        DoomSavedData d = EventScheduler.data();
-        if (d != null) EventScheduler.sync(player, d);
-        ctx.getSource().sendSuccess(() -> Component.literal(action == 3 ? "Next event HUD reset" : hidden ? "Next event HUD hidden" : "Next event HUD shown"), false);
+        PacketDistributor.sendToPlayer(player, new HudSettingsPayload(action, 0, 0, 0));
+        String msg = switch (action) {
+            case NextEventHudSettings.SHOW -> "Next event HUD shown";
+            case NextEventHudSettings.HIDE -> "Next event HUD hidden";
+            case NextEventHudSettings.TOGGLE -> "Next event HUD toggled";
+            default -> "Next event HUD reset";
+        };
+        ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
         return 1;
     }
 
@@ -207,10 +209,7 @@ public final class DoomCommands {
         String name = StringArgumentType.getString(ctx, "anchor");
         int anchor = NextEventHudSettings.anchorIndex(name);
         if (anchor < 0) throw BAD_ANCHOR.create();
-        NextEventHudSettings.setPosition(player, anchor, x, y);
-        NextEventHudSettings.setHidden(player, false);
-        DoomSavedData d = EventScheduler.data();
-        if (d != null) EventScheduler.sync(player, d);
+        PacketDistributor.sendToPlayer(player, new HudSettingsPayload(NextEventHudSettings.MOVE, anchor, x, y));
         ctx.getSource().sendSuccess(() -> Component.literal("Next event HUD moved to " + name + " (" + x + ", " + y + ")"), false);
         return 1;
     }

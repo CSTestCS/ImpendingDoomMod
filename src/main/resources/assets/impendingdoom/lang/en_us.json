@@ -107,7 +107,7 @@
   "gui.impendingdoom.first_event": "First Doom Event: %s",
   "gui.impendingdoom.first_event.random": "Random",
   "hud.impendingdoom.next": "Next: %s",
-  "hud.impendingdoom.when": "Day %s",
+  "hud.impendingdoom.when": "Begins in %s",
   "hud.impendingdoom.none": "Next: nothing",
   "block.impendingdoom.decaying_dirt": "Decaying Dirt",
   "block.impendingdoom.decaying_coarse_dirt": "Decaying Coarse Dirt",

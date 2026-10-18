@@ -62,14 +62,14 @@ public final class DoomConfig {
                         "minecraft:vindicator", "minecraft:drowned", "minecraft:stray", "minecraft:wither_skeleton"),
                         () -> "minecraft:zombie", DoomConfig::isString);
         KAIJU_SCALE = b.comment("Kaiju size multiplier").defineInRange("kaijuScale", 20.0, 1.0, 32.0);
-        FLOOD_RISE_PER_DAY = b.comment("Blocks the Flooding water rises per Minecraft day (rain doubles it)")
-                .defineInRange("floodRisePerDay", 2.0, 0.1, 64.0);
+        FLOOD_RISE_PER_DAY = b.comment("Blocks the Flooding water rises per Minecraft day")
+                .defineInRange("floodingRisePerDay", 0.25, 0.01, 64.0);
         SMALL_METEOR_INTERVAL = b.comment("Average ticks between bursts of small meteors around each player during a Meteor Shower (20 ticks = 1 second)")
                 .defineInRange("smallMeteorInterval", 40, 1, 72000);
         SMALL_METEOR_MIN = b.comment("Minimum number of small meteors in each burst").defineInRange("smallMeteorMin", 1, 0, 100);
         SMALL_METEOR_MAX = b.comment("Maximum number of small meteors in each burst").defineInRange("smallMeteorMax", 4, 0, 100);
         LAVA_RISE_PER_DAY = b.comment("Blocks the Volcanic Flooding lava rises per Minecraft day")
-                .defineInRange("lavaRisePerDay", 3.0, 0.1, 64.0);
+                .defineInRange("volcanicFloodingRisePerDay", 0.4, 0.01, 64.0);
         b.pop();
 
         b.push("general");

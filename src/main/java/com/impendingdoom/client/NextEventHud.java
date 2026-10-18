@@ -2,7 +2,8 @@ package com.impendingdoom.client;
 
 import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.core.EventRegistry;
-import com.impendingdoom.core.NextEventHudSettings;
+import com.impendingdoom.config.DoomClientConfig;
+import com.impendingdoom.core.EventScheduler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -19,8 +20,7 @@ public final class NextEventHud {
     public static void render(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        long hud = ClientDoomState.hud;
-        if (NextEventHudSettings.hidden(hud)) return;
+        if (!DoomClientConfig.HUD_VISIBLE.get()) return;
 
         DoomEvent next = EventRegistry.get(ClientDoomState.next);
         Component title;
@@ -30,7 +30,10 @@ public final class NextEventHud {
         } else {
             title = Component.translatable("hud.impendingdoom.next", next.displayName())
                     .withStyle(next.isMajor() ? ChatFormatting.DARK_RED : ChatFormatting.GOLD);
-            when = Component.translatable("hud.impendingdoom.when", ClientDoomState.nextDay + 1)
+            // Counts down between syncs (the server corrects it every second).
+            long since = mc.level == null ? 0 : Math.max(0, mc.level.getGameTime() - ClientDoomState.syncedAt);
+            long ticks = Math.max(0, ClientDoomState.ticksUntilNext - since);
+            when = Component.translatable("hud.impendingdoom.when", EventScheduler.formatTicks(ticks))
                     .withStyle(ChatFormatting.GRAY);
         }
 
@@ -39,11 +42,11 @@ public final class NextEventHud {
         int height = when == null ? font.lineHeight : font.lineHeight * 2 + 1;
         int sw = graphics.guiWidth();
         int sh = graphics.guiHeight();
-        int ox = NextEventHudSettings.x(hud);
-        int oy = NextEventHudSettings.y(hud);
+        int ox = DoomClientConfig.HUD_X.get();
+        int oy = DoomClientConfig.HUD_Y.get();
         int x;
         int y;
-        switch (NextEventHudSettings.ANCHORS[Math.min(NextEventHudSettings.anchor(hud), NextEventHudSettings.ANCHORS.length - 1)]) {
+        switch (DoomClientConfig.HUD_ANCHOR.get()) {
             case "top_center" -> { x = (sw - width) / 2 + ox; y = oy; }
             case "top_right" -> { x = sw - width - ox; y = oy; }
             case "middle_left" -> { x = ox; y = (sh - height) / 2 + oy; }

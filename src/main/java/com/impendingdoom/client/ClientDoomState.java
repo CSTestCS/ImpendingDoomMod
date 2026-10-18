@@ -9,9 +9,9 @@ public final class ClientDoomState {
     public static float quake;
     public static boolean blizzard;
     public static String next = "";
-    public static long nextDay = -1;
-    /** Packed next-event HUD settings (see NextEventHudSettings). */
-    public static long hud;
+    /** Day-time ticks until the next event, as of {@link #syncedAt} (client game time). */
+    public static long ticksUntilNext = -1;
+    public static long syncedAt;
     /** entity id -> mark flags (see EntityMarkPayload) */
     public static final Map<Integer, Integer> MARKS = new HashMap<>();
 
@@ -22,8 +22,7 @@ public final class ClientDoomState {
         quake = 0;
         blizzard = false;
         next = "";
-        nextDay = -1;
-        hud = 0;
+        ticksUntilNext = -1;
         MARKS.clear();
     }
 }

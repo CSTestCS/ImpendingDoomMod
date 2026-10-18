@@ -7,6 +7,7 @@ import com.impendingdoom.core.DoomEvent;
 import com.impendingdoom.core.DoomSavedData;
 import com.impendingdoom.core.EventScheduler;
 import com.impendingdoom.registry.ModBlocks;
+import com.impendingdoom.util.EventUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -20,8 +21,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Flooding / Volcanic Flooding: a temporary, layer based fluid rises from its starting level (sea level for water,
- * deep underground for lava) and evenly fills every air block at its level. It rises a little each day (water rises
- * faster in rain) and rapidly drains away over the final three days before the next major event.
+ * deep underground for lava) and evenly fills every air block at its level. It rises slowly each day (and it never
+ * stops raining while the water rises) and rapidly drains away over the final three days before the next major event.
  * Volcanic Flooding only fills underground space.
  */
 public class FloodingEvent extends DoomEvent {
@@ -80,7 +81,6 @@ public class FloodingEvent extends DoomEvent {
         double remaining = daysLeft - 1 + dayFraction; // days until the next major event
         if (remaining > 3) {
             double perDay = lava ? DoomConfig.LAVA_RISE_PER_DAY.get() : DoomConfig.FLOOD_RISE_PER_DAY.get();
-            if (!lava && level.isRaining()) perDay *= level.isThundering() ? 3 : 2;
             surface += perDay * elapsed / DayClock.DAY_LENGTH;
             surface = Math.min(surface, level.getMaxY() - 2);
             data.putDouble("peak", surface);
@@ -90,6 +90,12 @@ public class FloodingEvent extends DoomEvent {
             surface = base + (peak - base) * Math.max(0, remaining - 0.25) / 2.75;
         }
         data.putDouble("surface", surface);
+
+        // It never stops raining while the water rises.
+        if (!lava && level.getGameTime() % 100 == 0 && (!level.isRaining() || data.getLongOr("rainUntil", 0L) < level.getGameTime() + 1200)) {
+            if (!level.isThundering()) EventUtil.setWeather(level, "rain", 24000);
+            data.putLong("rainUntil", level.getGameTime() + 24000);
+        }
 
         RandomSource r = level.getRandom();
         for (ServerPlayer player : level.players()) {

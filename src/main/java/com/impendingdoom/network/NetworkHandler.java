@@ -12,6 +12,7 @@ public final class NetworkHandler {
         // The lambdas keep the client-only handler class from loading on a dedicated server.
         registrar.playToClient(DoomStatePayload.TYPE, DoomStatePayload.CODEC, (payload, ctx) -> ClientPayloadHandler.handleState(payload));
         registrar.playToClient(EntityMarkPayload.TYPE, EntityMarkPayload.CODEC, (payload, ctx) -> ClientPayloadHandler.handleMark(payload));
+        registrar.playToClient(HudSettingsPayload.TYPE, HudSettingsPayload.CODEC, (payload, ctx) -> ClientPayloadHandler.handleHud(payload));
         registrar.playToClient(HallucinationPayload.TYPE, HallucinationPayload.CODEC, (payload, ctx) -> ClientPayloadHandler.handleHallucination(payload));
     }
 }

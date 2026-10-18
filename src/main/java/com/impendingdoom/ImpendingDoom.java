@@ -36,6 +36,7 @@ public final class ImpendingDoom {
         ModGameRules.GAME_RULES.register(modBus);
 
         container.registerConfig(ModConfig.Type.STARTUP, DoomConfig.SPEC);
+        container.registerConfig(ModConfig.Type.CLIENT, com.impendingdoom.config.DoomClientConfig.SPEC);
 
         modBus.addListener(NetworkHandler::register);
         modBus.addListener(ModEntities::registerAttributes);

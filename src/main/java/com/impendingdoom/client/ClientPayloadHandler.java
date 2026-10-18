@@ -2,7 +2,10 @@ package com.impendingdoom.client;
 
 import com.impendingdoom.core.ActiveEvents;
 import com.impendingdoom.events.major.FallEvent;
+import com.impendingdoom.config.DoomClientConfig;
+import com.impendingdoom.core.NextEventHudSettings;
 import com.impendingdoom.network.DoomStatePayload;
+import com.impendingdoom.network.HudSettingsPayload;
 import com.impendingdoom.network.EntityMarkPayload;
 import com.impendingdoom.network.HallucinationPayload;
 import net.minecraft.client.Minecraft;
@@ -17,8 +20,8 @@ public final class ClientPayloadHandler {
         ClientDoomState.thirst = payload.thirst();
         ClientDoomState.quake = payload.quake();
         ClientDoomState.next = payload.next();
-        ClientDoomState.nextDay = payload.nextDay();
-        ClientDoomState.hud = payload.hud();
+        ClientDoomState.ticksUntilNext = payload.ticksUntilNext();
+        ClientDoomState.syncedAt = Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime();
         boolean isFall = ActiveEvents.clientActive(FallEvent.ID);
         if (wasFall != isFall) redrawNearbyChunks();
     }
@@ -31,6 +34,28 @@ public final class ClientPayloadHandler {
         int sx = mc.player.getBlockX() >> 4;
         int sz = mc.player.getBlockZ() >> 4;
         mc.level.setSectionRangeDirty(sx - r, mc.level.getMinSectionY(), sz - r, sx + r, mc.level.getMaxSectionY(), sz + r);
+    }
+
+    /** /impendingdoom hud: change and save the client config. */
+    public static void handleHud(HudSettingsPayload payload) {
+        switch (payload.action()) {
+            case NextEventHudSettings.SHOW -> DoomClientConfig.HUD_VISIBLE.set(true);
+            case NextEventHudSettings.HIDE -> DoomClientConfig.HUD_VISIBLE.set(false);
+            case NextEventHudSettings.TOGGLE -> DoomClientConfig.HUD_VISIBLE.set(!DoomClientConfig.HUD_VISIBLE.get());
+            case NextEventHudSettings.MOVE -> {
+                DoomClientConfig.HUD_VISIBLE.set(true);
+                DoomClientConfig.HUD_ANCHOR.set(NextEventHudSettings.ANCHORS[Math.floorMod(payload.anchor(), NextEventHudSettings.ANCHORS.length)]);
+                DoomClientConfig.HUD_X.set(payload.x());
+                DoomClientConfig.HUD_Y.set(payload.y());
+            }
+            default -> {
+                DoomClientConfig.HUD_VISIBLE.set(true);
+                DoomClientConfig.HUD_ANCHOR.set("top_left");
+                DoomClientConfig.HUD_X.set(4);
+                DoomClientConfig.HUD_Y.set(4);
+            }
+        }
+        DoomClientConfig.SPEC.save();
     }
 
     public static void handleMark(EntityMarkPayload payload) {

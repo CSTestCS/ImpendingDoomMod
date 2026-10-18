@@ -8,10 +8,10 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /**
  * Event state the client needs: fog, sky tint, leaf colors, earthquake shake, thirst HUD and the next event HUD.
- * {@code hud} holds the player's next-event HUD settings (see {@link com.impendingdoom.core.NextEventHudSettings}).
+ * {@code ticksUntilNext} is the number of day-time ticks left before the next event begins.
  */
 public record DoomStatePayload(String minor, String major, String season, int thirst, float quake, int flags,
-                               String next, long nextDay, long hud) implements CustomPacketPayload {
+                               String next, long ticksUntilNext) implements CustomPacketPayload {
     public static final int BLIZZARD = 1;
     public static final Type<DoomStatePayload> TYPE = new Type<>(ImpendingDoom.id("state"));
     public static final StreamCodec<ByteBuf, DoomStatePayload> CODEC = StreamCodec.composite(
@@ -22,8 +22,7 @@ public record DoomStatePayload(String minor, String major, String season, int th
             ByteBufCodecs.FLOAT, DoomStatePayload::quake,
             ByteBufCodecs.VAR_INT, DoomStatePayload::flags,
             ByteBufCodecs.STRING_UTF8, DoomStatePayload::next,
-            ByteBufCodecs.VAR_LONG, DoomStatePayload::nextDay,
-            ByteBufCodecs.VAR_LONG, DoomStatePayload::hud,
+            ByteBufCodecs.VAR_LONG, DoomStatePayload::ticksUntilNext,
             DoomStatePayload::new);
 
     @Override
