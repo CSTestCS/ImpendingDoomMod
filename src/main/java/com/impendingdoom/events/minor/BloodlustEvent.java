@@ -39,7 +39,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
  * Mortis's Bloodlust: a few times a day, a random 30% of mobs get the Bloodlust Haze (red haze, shaking) - 2 minutes
- * for hostile mobs, 5 for the rest. When the event ends, passive and neutral mobs recover. If the haze runs out naturally the mob becomes bloodlusted: it stops shaking, blood drips from it, its eyes
+ * for hostile mobs, 5 for the rest. When the event ends, passive and neutral mobs calm down but keep what they gained. If the haze runs out naturally the mob becomes bloodlusted: it stops shaking, blood drips from it, its eyes
  * glow red, it attacks any mob it can find, and it grows bigger and stronger with every kill.
  */
 @EventBusSubscriber(modid = ImpendingDoom.MODID)
@@ -105,15 +105,7 @@ public class BloodlustEvent extends DoomEvent {
         mob.goalSelector.removeAllGoals(g -> g instanceof BloodlustGoal);
         mob.targetSelector.removeAllGoals(g -> g instanceof BloodlustGoal);
         mob.setTarget(null);
-        mob.getPersistentData().remove("impendingdoom_kills");
-        for (var attr : java.util.List.of(Attributes.SCALE, Attributes.MAX_HEALTH, Attributes.ATTACK_DAMAGE)) {
-            var inst = mob.getAttribute(attr);
-            if (inst == null) continue;
-            inst.removeModifier(ImpendingDoom.id("bloodlust_scale"));
-            inst.removeModifier(ImpendingDoom.id("bloodlust_health"));
-            inst.removeModifier(ImpendingDoom.id("bloodlust_damage"));
-        }
-        if (mob.getHealth() > mob.getMaxHealth()) mob.setHealth(mob.getMaxHealth());
+        // Only the aggression goes: the size, health and damage gained from kills stay.
         EntityMarks.update(mob);
     }
 
